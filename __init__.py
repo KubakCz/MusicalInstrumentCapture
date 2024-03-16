@@ -1,3 +1,6 @@
+# Musical Instrument Capture
+# Copyright (C) 2024  Jakub Slezáček
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
@@ -10,22 +13,75 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# Content of this file is based on example by Robert Guetzkow
+# (https://github.com/robertguetzkow/blender-python-examples/tree/master/add_ons/install_dependencies),
+# and has been modified to fit the needs of the Musical Instrument Capture add-on.
+# It's purpose is to install the required dependencies for the add-on
+# and to register the add-on with Blender. For the actual add-on code,
+# see the other files in this directory.
+
+import bpy
 
 bl_info = {
-    "name": "MusicalInstrumentCapture",
+    "name": "Musical Instrument Capture",
     "author": "Jakub Slezáček",
     "description": "",
-    "blender": (2, 80, 0),
+    "blender": (2, 91, 0),
     "version": (0, 0, 1),
     "location": "",
-    "warning": "",
+    "warning": "Requires installation of dependencies",
     "category": "Generic"
 }
 
 
+def get_classes_to_register():
+    # Declare all classes that should be registered with Blender.
+    # This is a separate function because the imported modules might
+    # require the dependencies to be installed first.
+    from .ImportHands import MESH_OT_ImportHands
+    from .MusicalInstrumentCapture import VIEW3D_PT_MusicalInstrumentCapture
+
+    return [VIEW3D_PT_MusicalInstrumentCapture, MESH_OT_ImportHands]
+
+
+class DEPENDENCY_PT_Warning(bpy.types.Panel):
+    bl_label = "Musical Instrument Capture"
+    bl_category = "Musical Instrument Capture"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+
+    def draw(self, context):
+        layout = self.layout
+
+        lines = [f"Please install the missing dependencies for the \"{bl_info.get('name')}\" add-on.",
+                 "TODO: Tutorial on how to install the dependencies manually."]
+
+        for line in lines:
+            layout.label(text=line)
+
+
+dependencies_installed = False
+
+
 def register():
-    ...
+    try:
+        # Try to register the classes.
+        for cls in get_classes_to_register():
+            bpy.utils.register_class(cls)
+        global dependencies_installed
+        dependencies_installed = True
+    except ImportError:
+        # If the dependencies are not installed, register the warning panel.
+        bpy.utils.register_class(DEPENDENCY_PT_Warning)
+        return
 
 
 def unregister():
-    ...
+    if not dependencies_installed:
+        bpy.utils.unregister_class(DEPENDENCY_PT_Warning)
+        return
+
+    for cls in get_classes_to_register():
+        bpy.utils.unregister_class(cls)
