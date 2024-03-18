@@ -1,8 +1,27 @@
+# Musical Instrument Capture
+# Copyright (C) 2024  Jakub Slezáček
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""Contains the HandJoint enum and related utilities."""
+
 from enum import Enum
 from typing import Optional
 
 
 class HandJoint(Enum):
+    """Enum representing the joints of the hand. This can be used to index the hand pose data."""
     WRIST = 0
     THUMB_1 = 1
     THUMB_2 = 2
@@ -26,11 +45,13 @@ class HandJoint(Enum):
     PINKY_TIP = 20
 
     def predecessor(self) -> Optional['HandJoint']:
-        if (self.value == 0):
+        """Returns the predecessor of this joint, or None if there is none."""
+        if self.value == 0:
             return None
         return HandJoint._predecessors[self.value]
 
     def is_tip(self) -> bool:
+        """Returns whether this joint is a tip joint."""
         return self in HandJoint._tip_joints
 
     def __str__(self):
