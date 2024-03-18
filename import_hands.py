@@ -58,6 +58,7 @@ def create_animation_data(hand_name: str, joint_empty_list: List[bpy.types.Objec
     """Creates empty animation data for the given joint empty list and returns the fcurves for each joint."""
     fcurves = []
     for joint_empty in joint_empty_list:
+        joint_empty.rotation_mode = 'QUATERNION'
         joint_empty.animation_data_create()
         action = bpy.data.actions.new(name=hand_name + " " + joint_empty.name)
         joint_empty.animation_data.action = action
@@ -101,16 +102,41 @@ def compute_hand_rotation(data: HandFrame) -> Quaternion:
 def insert_keyframe(fcurves: FCurvesList, data: HandFrame):
     """Inserts a keyframe for the given frame data into the fcurves."""
     frame_time = data.timestamp * bpy.context.scene.render.fps + bpy.context.scene.frame_start
-    # hand_ws_pos = data.world_positions[HandJoint.WRIST.value]
-    # hand_ws_rot = compute_hand_rotation(data)
+
+    wrist_rot = compute_hand_rotation(data)
+    ws_rot = [wrist_rot]
+
+    # Insert local rotation keyframe for the wrist joint
+    fcurves[0]['ROT'][0].keyframe_points.insert(frame_time, wrist_rot.w)
+    fcurves[0]['ROT'][1].keyframe_points.insert(frame_time, wrist_rot.x)
+    fcurves[0]['ROT'][2].keyframe_points.insert(frame_time, wrist_rot.y)
+    fcurves[0]['ROT'][3].keyframe_points.insert(frame_time, wrist_rot.z)
+
     for i in range(1, len(fcurves)):  # Skip the wrist joint
-        joint_ws_pos = data.world_positions[i]
         predecessor = HandJoint(i).predecessor()
         assert predecessor is not None
+
         predecessor_ws_pos = data.world_positions[predecessor.value]
-        fcurves[i]['LOC'][0].keyframe_points.insert(frame_time, joint_ws_pos.x - predecessor_ws_pos.x)
-        fcurves[i]['LOC'][1].keyframe_points.insert(frame_time, joint_ws_pos.y - predecessor_ws_pos.y)
-        fcurves[i]['LOC'][2].keyframe_points.insert(frame_time, joint_ws_pos.z - predecessor_ws_pos.z)
+        predecessor_ws_rot = ws_rot[predecessor.value]
+
+        joint_loc_rot = Quaternion()  # use identity quaternion for now
+        joint_ws_rot = ws_rot[predecessor.value] @ joint_loc_rot
+        ws_rot.append(joint_ws_rot)
+
+        joint_ws_pos = data.world_positions[i]
+        joint_loc_offset = joint_ws_pos - predecessor_ws_pos
+        joint_loc_pos = predecessor_ws_rot.inverted() @ joint_loc_offset
+
+        # Insert local position keyframe
+        fcurves[i]['LOC'][0].keyframe_points.insert(frame_time, joint_loc_pos.x)
+        fcurves[i]['LOC'][1].keyframe_points.insert(frame_time, joint_loc_pos.y)
+        fcurves[i]['LOC'][2].keyframe_points.insert(frame_time, joint_loc_pos.z)
+
+        # Insert local rotation keyframe
+        fcurves[i]['ROT'][0].keyframe_points.insert(frame_time, joint_loc_rot.w)
+        fcurves[i]['ROT'][1].keyframe_points.insert(frame_time, joint_loc_rot.x)
+        fcurves[i]['ROT'][2].keyframe_points.insert(frame_time, joint_loc_rot.y)
+        fcurves[i]['ROT'][3].keyframe_points.insert(frame_time, joint_loc_rot.z)
 
 
 def animate_hand(hand_data: HandAnimationData, joint_empty_list: List[bpy.types.Object]):
