@@ -107,10 +107,10 @@ def insert_keyframe(fcurves: FCurvesList, data: HandFrame):
     ws_rot = [wrist_rot]
 
     # Insert local rotation keyframe for the wrist joint
-    fcurves[0]['ROT'][0].keyframe_points.insert(frame_time, wrist_rot.w)
-    fcurves[0]['ROT'][1].keyframe_points.insert(frame_time, wrist_rot.x)
-    fcurves[0]['ROT'][2].keyframe_points.insert(frame_time, wrist_rot.y)
-    fcurves[0]['ROT'][3].keyframe_points.insert(frame_time, wrist_rot.z)
+    # fcurves[0]['ROT'][0].keyframe_points.insert(frame_time, wrist_rot.w)
+    # fcurves[0]['ROT'][1].keyframe_points.insert(frame_time, wrist_rot.x)
+    # fcurves[0]['ROT'][2].keyframe_points.insert(frame_time, wrist_rot.y)
+    # fcurves[0]['ROT'][3].keyframe_points.insert(frame_time, wrist_rot.z)
 
     for i in range(1, len(fcurves)):  # Skip the wrist joint
         predecessor = HandJoint(i).predecessor()
@@ -152,7 +152,7 @@ def generate_hand(hand_data: HandAnimationData, location: Tuple[float, float, fl
     animate_hand(hand_data, joint_empty_list)
 
 
-class MESH_OT_ImportHands(bpy.types.Operator):
+class MIC_OT_ImportHands(bpy.types.Operator):
     """Operator for importing hand animation data from a json file."""
     bl_idname = "mesh.import_hands"
     bl_label = "Import Hands"

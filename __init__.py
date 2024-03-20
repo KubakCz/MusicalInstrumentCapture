@@ -30,18 +30,6 @@ bl_info = {
 }
 
 
-def get_classes_to_register():
-    """
-    Declare all classes that should be registered with Blender.
-    This is a separate function because the imported modules might
-    require the dependencies to be installed first.
-    """
-    from .import_hands import MESH_OT_ImportHands
-    from .musical_instrument_capture import VIEW3D_PT_MusicalInstrumentCapture
-
-    return [VIEW3D_PT_MusicalInstrumentCapture, MESH_OT_ImportHands]
-
-
 class DEPENDENCY_PT_Warning(bpy.types.Panel):
     """Panel that warns the user about missing dependencies."""
     bl_label = "Musical Instrument Capture"
@@ -65,22 +53,39 @@ dependencies_installed = False
 def register():
     """Try to register the classes, or register the warning panel if the dependencies are not installed."""
     try:
-        # Try to register the classes.
-        for cls in get_classes_to_register():
-            bpy.utils.register_class(cls)
-        global dependencies_installed
-        dependencies_installed = True
+        from .hand_import import pt_import_hands
+        bpy.utils.register_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
+
+        from .hand_import import ot_import_hands
+        bpy.utils.register_class(ot_import_hands.MIC_OT_ImportHands)
+
+        from .rigidbody_align import pt_align
+        bpy.utils.register_class(pt_align.MIC_PT_Align)
+        bpy.utils.register_class(pt_align.ViolinMarkers)
+        bpy.utils.register_class(pt_align.BowMarkers)
+        bpy.types.Scene.violin_markers = bpy.props.PointerProperty(type=pt_align.ViolinMarkers)
+        bpy.types.Scene.bow_markers = bpy.props.PointerProperty(type=pt_align.BowMarkers)
     except ImportError:
-        # If the dependencies are not installed, register the warning panel.
+        # If the dependencies are not installed, unregister already registered classes
+        # and register the warning panel.
+        unregister()
         bpy.utils.register_class(DEPENDENCY_PT_Warning)
         return
 
 
 def unregister():
     """Unregister the classes, or the warning panel if the dependencies are not installed."""
-    if not dependencies_installed:
-        bpy.utils.unregister_class(DEPENDENCY_PT_Warning)
-        return
+    from .hand_import import pt_import_hands
+    bpy.utils.unregister_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
 
-    for cls in get_classes_to_register():
-        bpy.utils.unregister_class(cls)
+    from .hand_import import ot_import_hands
+    bpy.utils.unregister_class(ot_import_hands.MIC_OT_ImportHands)
+
+    from .rigidbody_align import pt_align
+    bpy.utils.unregister_class(pt_align.MIC_PT_Align)
+    bpy.utils.unregister_class(pt_align.ViolinMarkers)
+    bpy.utils.unregister_class(pt_align.BowMarkers)
+    del bpy.types.Scene.violin_markers  # type: ignore
+    del bpy.types.Scene.bow_markers  # type: ignore
+
+    bpy.utils.unregister_class(DEPENDENCY_PT_Warning)

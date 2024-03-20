@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Main panel for the Musical Instrument Capture add-on."""
+"""Panel for importing hand animation data and aligning it with the motion capture data."""
 
 import bpy
-from .import_hands import MESH_OT_ImportHands
+from .ot_import_hands import MIC_OT_ImportHands
 
 
-class VIEW3D_PT_MusicalInstrumentCapture(bpy.types.Panel):
+class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
     """Main panel for the Musical Instrument Capture add-on."""
     bl_label = "Musical Instrument Capture"
     bl_idname = "VIEW3D_PT_MusicalInstrumentCapture"
@@ -30,4 +30,4 @@ class VIEW3D_PT_MusicalInstrumentCapture(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(MESH_OT_ImportHands.bl_idname, text="Import Hands")
+        layout.operator(MIC_OT_ImportHands.bl_idname, text="Import Hands")
