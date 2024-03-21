@@ -24,10 +24,14 @@ plane_marker_description = "Marker defining plane orientation of the top plate o
 
 class ViolinAlignData(bpy.types.PropertyGroup):
     """Property group for storing violin markers."""
-    top_of_bridge: bpy.props.PointerProperty(
+    reference_point: bpy.props.PointerProperty(
         type=bpy.types.Object,
-        name="Top of the Bridge",  # noqa
-        description="Object parented to the violin, positioned at the top of the bridge.")  # noqa
+        name="Reference Point",  # noqa
+        description="Reference object placed on the violin model. Must be child of the model.")  # noqa
+    reference_marker: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Reference Marker",  # noqa
+        description="Marker to be aligned with reference point.")  # noqa
 
     rigidbody: bpy.props.PointerProperty(
         type=bpy.types.Object,
@@ -51,14 +55,6 @@ class ViolinAlignData(bpy.types.PropertyGroup):
         type=bpy.types.Object,
         name="Bridge marker",  # noqa
         description="Marker above the center of the bridge.")  # noqa
-    bridge_offset: bpy.props.FloatProperty(
-        name="Bridge Marker Offset",  # noqa
-        description="Vertical offset of the bridge marker from the top of the bridge.",  # noqa
-        default=0.0,
-        min=0.0,
-        unit='LENGTH',  # noqa
-        subtype='DISTANCE')  # noqa
-
     scroll: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Scroll marker",  # noqa
@@ -67,6 +63,11 @@ class ViolinAlignData(bpy.types.PropertyGroup):
 
 class BowAlignData(bpy.types.PropertyGroup):
     """Property group for storing bow markers."""
+    frog_reference: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Frog reference",  # noqa
+        description="Reference object for the frog marker. Must be parented to ")  # noqa
+
     rigidbody: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Rigidbody",  # noqa

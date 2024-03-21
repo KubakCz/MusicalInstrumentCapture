@@ -36,19 +36,17 @@ class MIC_PT_Align(bpy.types.Panel):
         violin_align_data = context.scene.violin_align_data
         layout.label(text="Violin:")
         violin_markers_box = layout.box()
-        violin_markers_box.label(text="Model:")
-        violin_markers_box.prop_search(violin_align_data, "top_of_bridge", bpy.data, "objects")
-        violin_model = violin_align_data.top_of_bridge.parent if violin_align_data.top_of_bridge else None
-        violin_markers_box.label(text=f"Model: {violin_model.name if violin_model else 'No model selected.'}")
-        violin_markers_box.separator()
-        violin_markers_box.label(text="Mocap:")
         violin_markers_box.prop_search(violin_align_data, "rigidbody", bpy.data, "objects")
+        violin_markers_box.label(text="Markers:")
         violin_markers_box.prop_search(violin_align_data, "plane_1", bpy.data, "objects")
         violin_markers_box.prop_search(violin_align_data, "plane_2", bpy.data, "objects")
         violin_markers_box.prop_search(violin_align_data, "plane_3", bpy.data, "objects")
         violin_markers_box.prop_search(violin_align_data, "bridge", bpy.data, "objects")
-        violin_markers_box.prop(violin_align_data, "bridge_offset")
         violin_markers_box.prop_search(violin_align_data, "scroll", bpy.data, "objects")
+        violin_markers_box.prop_search(violin_align_data, "reference_marker", bpy.data, "objects")
+        violin_model = violin_align_data.reference_point.parent if violin_align_data.reference_point else None
+        violin_markers_box.label(text=f"Model: {violin_model.name if violin_model else 'No reference point selected.'}")
+        violin_markers_box.prop_search(violin_align_data, "reference_point", bpy.data, "objects")
         violin_markers_box.operator(MIC_OT_AlignViolin.bl_idname, text="Align Violin")
 
         # Bow alignment
