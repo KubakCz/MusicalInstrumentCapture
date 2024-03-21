@@ -160,14 +160,14 @@ class MIC_OT_ImportHands(bpy.types.Operator):
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")  # type: ignore # noqa
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context) -> set[str]:
         print("----------------- Executing Import Hands -----------------")
         try:
             with open(self.filepath, 'r', encoding='utf-8') as file:
                 print("Reading file...")
                 json_string = file.read()
                 print("Loading data...")
-                data: List[HandAnimationData] = HandAnimationData.schema().loads(  # pylint: disable=no-member
+                data: List[HandAnimationData] = HandAnimationData.schema().loads(  # type: ignore
                     json_string,
                     many=True)
         except marshmallow.exceptions.ValidationError:
@@ -180,7 +180,6 @@ class MIC_OT_ImportHands(bpy.types.Operator):
             generate_hand(hand_data, (i/4, 0, 0))
             i += 1
 
-        print("----------------- Import Hands Finished -----------------")
         return {'FINISHED'}
 
     def invoke(self, context, event):

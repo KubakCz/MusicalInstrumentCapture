@@ -17,52 +17,7 @@
 """Panel for alligning Violin and Bow models with the captured data."""
 
 import bpy
-
-plane_marker_name = "Plane marker"
-plane_marker_description = "Marker defining plane orientation of the top plate of the violin."
-
-
-class ViolinMarkers(bpy.types.PropertyGroup):
-    """Property group for storing violin markers."""
-    plane_1: bpy.props.PointerProperty(  # type: ignore
-        type=bpy.types.Object,
-        name=plane_marker_name + " 1",  # noqa
-        description=plane_marker_description)
-    plane_2: bpy.props.PointerProperty(  # type: ignore
-        type=bpy.types.Object,
-        name=plane_marker_name + " 2",  # noqa
-        description=plane_marker_description)
-    plane_3: bpy.props.PointerProperty(  # type: ignore
-        type=bpy.types.Object,
-        name=plane_marker_name + " 3",  # noqa
-        description=plane_marker_description)
-
-    bridge: bpy.props.PointerProperty(  # type: ignore
-        type=bpy.types.Object,
-        name="Bridge marker",  # noqa
-        description="Marker above the center of the bridge.")  # noqa
-    bridge_offset: bpy.props.FloatProperty(  # type: ignore
-        name="Bridge Marker Offset",  # noqa
-        description="Vertical offset of the bridge marker from the top of the bridge.",  # noqa
-        default=0.0,
-        min=0.0)  # type: ignore
-
-    scroll: bpy.props.PointerProperty(  # type: ignore
-        type=bpy.types.Object,
-        name="Scroll marker",  # noqa
-        description="Marker above the scroll.")  # noqa
-
-
-class BowMarkers(bpy.types.PropertyGroup):
-    """Property group for storing bow markers."""
-    frog: bpy.props.PointerProperty(  # type: ignore
-        type=bpy.types.Object,
-        name="Frog marker",  # noqa
-        description="Marker at the bottom of the frog.")  # noqa
-    tip: bpy.props.PointerProperty(  # type: ignore
-        type=bpy.types.Object,
-        name="Tip marker",  # noqa
-        description="Marker at the tip of the bow.")  # noqa
+from .ot_align_bow import MIC_OT_AlignBow
 
 
 class MIC_PT_Align(bpy.types.Panel):
@@ -77,23 +32,29 @@ class MIC_PT_Align(bpy.types.Panel):
         layout = self.layout
 
         # Violin alignment
-        layout.label(text="Violin markers:")
+        violin_align_data = context.scene.violin_align_data
+        layout.label(text="Violin:")
         violin_markers_box = layout.box()
-        violin_markers_box.prop_search(context.scene.violin_markers, "plane_1", bpy.data, "objects")
-        violin_markers_box.prop_search(context.scene.violin_markers, "plane_2", bpy.data, "objects")
-        violin_markers_box.prop_search(context.scene.violin_markers, "plane_3", bpy.data, "objects")
+        violin_markers_box.prop_search(violin_align_data, "rigidbody", bpy.data, "objects")
         violin_markers_box.separator()
-        violin_markers_box.prop_search(context.scene.violin_markers, "bridge", bpy.data, "objects")
-        violin_markers_box.prop(context.scene.violin_markers, "bridge_offset")
+        violin_markers_box.prop_search(violin_align_data, "plane_1", bpy.data, "objects")
+        violin_markers_box.prop_search(violin_align_data, "plane_2", bpy.data, "objects")
+        violin_markers_box.prop_search(violin_align_data, "plane_3", bpy.data, "objects")
         violin_markers_box.separator()
-        violin_markers_box.prop_search(context.scene.violin_markers, "scroll", bpy.data, "objects")
+        violin_markers_box.prop_search(violin_align_data, "bridge", bpy.data, "objects")
+        violin_markers_box.prop(violin_align_data, "bridge_offset")
+        violin_markers_box.separator()
+        violin_markers_box.prop_search(violin_align_data, "scroll", bpy.data, "objects")
         violin_markers_box.separator()
         violin_markers_box.operator("object.select_all", text="Align Violin")
 
         # Bow alignment
-        layout.label(text="Bow markers:")
+        bow_align_data = context.scene.bow_align_data
+        layout.label(text="Bow:")
         bow_markers_box = layout.box()
-        bow_markers_box.prop_search(context.scene.bow_markers, "frog", bpy.data, "objects")
-        bow_markers_box.prop_search(context.scene.bow_markers, "tip", bpy.data, "objects")
+        bow_markers_box.prop_search(bow_align_data, "rigidbody", bpy.data, "objects")
         bow_markers_box.separator()
-        bow_markers_box.operator("object.select_all", text="Align Bow")
+        bow_markers_box.prop_search(bow_align_data, "frog", bpy.data, "objects")
+        bow_markers_box.prop_search(bow_align_data, "tip", bpy.data, "objects")
+        bow_markers_box.separator()
+        bow_markers_box.operator(MIC_OT_AlignBow.bl_idname, text="Align Bow")

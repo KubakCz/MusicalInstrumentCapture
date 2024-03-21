@@ -40,11 +40,8 @@ class DEPENDENCY_PT_Warning(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        lines = [f"Please install the missing dependencies for the \"{bl_info.get('name')}\" add-on.",
-                 "TODO: Tutorial on how to install the dependencies manually."]
-
-        for line in lines:
-            layout.label(text=line)
+        layout.label(text=f"Please install the missing dependencies for the \"{bl_info.get('name')}\" add-on.")
+        layout.label(text="TODO: Tutorial on how to install the dependencies manually.")
 
 
 dependencies_installed = False
@@ -61,10 +58,16 @@ def register():
 
         from .rigidbody_align import pt_align
         bpy.utils.register_class(pt_align.MIC_PT_Align)
-        bpy.utils.register_class(pt_align.ViolinMarkers)
-        bpy.utils.register_class(pt_align.BowMarkers)
-        bpy.types.Scene.violin_markers = bpy.props.PointerProperty(type=pt_align.ViolinMarkers)
-        bpy.types.Scene.bow_markers = bpy.props.PointerProperty(type=pt_align.BowMarkers)
+
+        from .rigidbody_align import ot_align_bow
+        bpy.utils.register_class(ot_align_bow.MIC_OT_AlignBow)
+
+        from .rigidbody_align import align_data
+        bpy.utils.register_class(align_data.ViolinAlignData)
+        bpy.types.Scene.violin_align_data = bpy.props.PointerProperty(type=align_data.ViolinAlignData)
+
+        bpy.utils.register_class(align_data.BowAlignData)
+        bpy.types.Scene.bow_align_data = bpy.props.PointerProperty(type=align_data.BowAlignData)
     except ImportError:
         # If the dependencies are not installed, unregister already registered classes
         # and register the warning panel.
@@ -76,16 +79,28 @@ def register():
 def unregister():
     """Unregister the classes, or the warning panel if the dependencies are not installed."""
     from .hand_import import pt_import_hands
-    bpy.utils.unregister_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
+    if pt_import_hands.MIC_PT_MusicalInstrumentCapture.is_registered:
+        bpy.utils.unregister_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
 
     from .hand_import import ot_import_hands
-    bpy.utils.unregister_class(ot_import_hands.MIC_OT_ImportHands)
+    if ot_import_hands.MIC_OT_ImportHands.is_registered:
+        bpy.utils.unregister_class(ot_import_hands.MIC_OT_ImportHands)
 
     from .rigidbody_align import pt_align
-    bpy.utils.unregister_class(pt_align.MIC_PT_Align)
-    bpy.utils.unregister_class(pt_align.ViolinMarkers)
-    bpy.utils.unregister_class(pt_align.BowMarkers)
-    del bpy.types.Scene.violin_markers  # type: ignore
-    del bpy.types.Scene.bow_markers  # type: ignore
+    if pt_align.MIC_PT_Align.is_registered:
+        bpy.utils.unregister_class(pt_align.MIC_PT_Align)
 
-    bpy.utils.unregister_class(DEPENDENCY_PT_Warning)
+    from .rigidbody_align import ot_align_bow
+    if ot_align_bow.MIC_OT_AlignBow.is_registered:
+        bpy.utils.unregister_class(ot_align_bow.MIC_OT_AlignBow)
+
+    from .rigidbody_align import align_data
+    if align_data.ViolinAlignData.is_registered:
+        bpy.utils.unregister_class(align_data.ViolinAlignData)
+        del bpy.types.Scene.violin_align_data  # type: ignore
+    if align_data.BowAlignData.is_registered:
+        bpy.utils.unregister_class(align_data.BowAlignData)
+        del bpy.types.Scene.bow_align_data  # type: ignore
+
+    if DEPENDENCY_PT_Warning.is_registered:
+        bpy.utils.unregister_class(DEPENDENCY_PT_Warning)
