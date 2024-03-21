@@ -62,6 +62,9 @@ def register():
         from .rigidbody_align import ot_align_bow
         bpy.utils.register_class(ot_align_bow.MIC_OT_AlignBow)
 
+        from .rigidbody_align import ot_align_violin
+        bpy.utils.register_class(ot_align_violin.MIC_OT_AlignViolin)
+
         from .rigidbody_align import align_data
         bpy.utils.register_class(align_data.ViolinAlignData)
         bpy.types.Scene.violin_align_data = bpy.props.PointerProperty(type=align_data.ViolinAlignData)
@@ -93,6 +96,10 @@ def unregister():
     from .rigidbody_align import ot_align_bow
     if ot_align_bow.MIC_OT_AlignBow.is_registered:
         bpy.utils.unregister_class(ot_align_bow.MIC_OT_AlignBow)
+
+    from .rigidbody_align import ot_align_violin
+    if ot_align_violin.MIC_OT_AlignViolin.is_registered:
+        bpy.utils.unregister_class(ot_align_violin.MIC_OT_AlignViolin)
 
     from .rigidbody_align import align_data
     if align_data.ViolinAlignData.is_registered:

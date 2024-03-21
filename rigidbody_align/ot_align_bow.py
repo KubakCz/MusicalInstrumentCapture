@@ -18,8 +18,8 @@ class MIC_OT_AlignBow(bpy.types.Operator):
             return {'CANCELLED'}
 
         model.location = (0, 0, 0)
-        model.rotation_euler = (0, 0, 0)
 
+        # setup child_of constraint
         child_of = model.constraints.new(type='CHILD_OF')
         assert isinstance(child_of, bpy.types.ChildOfConstraint)
         child_of.target = bow_align_data.rigidbody

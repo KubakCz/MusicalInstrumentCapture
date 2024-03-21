@@ -24,35 +24,42 @@ plane_marker_description = "Marker defining plane orientation of the top plate o
 
 class ViolinAlignData(bpy.types.PropertyGroup):
     """Property group for storing violin markers."""
-    rigidbody: bpy.props.PointerProperty(  # type: ignore
+    top_of_bridge: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Top of the Bridge",  # noqa
+        description="Object parented to the violin, positioned at the top of the bridge.")  # noqa
+
+    rigidbody: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Rigidbody",  # noqa
         description="Rigidbody object representing the violin.")  # noqa
 
-    plane_1: bpy.props.PointerProperty(  # type: ignore
+    plane_1: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name=plane_marker_name + " 1",  # noqa
         description=plane_marker_description)
-    plane_2: bpy.props.PointerProperty(  # type: ignore
+    plane_2: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name=plane_marker_name + " 2",  # noqa
         description=plane_marker_description)
-    plane_3: bpy.props.PointerProperty(  # type: ignore
+    plane_3: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name=plane_marker_name + " 3",  # noqa
         description=plane_marker_description)
 
-    bridge: bpy.props.PointerProperty(  # type: ignore
+    bridge: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Bridge marker",  # noqa
         description="Marker above the center of the bridge.")  # noqa
-    bridge_offset: bpy.props.FloatProperty(  # type: ignore
+    bridge_offset: bpy.props.FloatProperty(
         name="Bridge Marker Offset",  # noqa
         description="Vertical offset of the bridge marker from the top of the bridge.",  # noqa
         default=0.0,
-        min=0.0)  # type: ignore
+        min=0.0,
+        unit='LENGTH',  # noqa
+        subtype='DISTANCE')  # noqa
 
-    scroll: bpy.props.PointerProperty(  # type: ignore
+    scroll: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Scroll marker",  # noqa
         description="Marker above the scroll.")  # noqa
@@ -60,16 +67,16 @@ class ViolinAlignData(bpy.types.PropertyGroup):
 
 class BowAlignData(bpy.types.PropertyGroup):
     """Property group for storing bow markers."""
-    rigidbody: bpy.props.PointerProperty(  # type: ignore
+    rigidbody: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Rigidbody",  # noqa
         description="Rigidbody object representing the bow.")  # noqa
 
-    frog: bpy.props.PointerProperty(  # type: ignore
+    frog: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Frog marker",  # noqa
         description="Marker at the bottom of the frog.")  # noqa
-    tip: bpy.props.PointerProperty(  # type: ignore
+    tip: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Tip marker",  # noqa
         description="Marker at the tip of the bow.")  # noqa
