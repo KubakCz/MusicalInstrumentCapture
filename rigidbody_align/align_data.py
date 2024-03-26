@@ -63,20 +63,24 @@ class ViolinAlignData(bpy.types.PropertyGroup):
 
 class BowAlignData(bpy.types.PropertyGroup):
     """Property group for storing bow markers."""
-    frog_reference: bpy.props.PointerProperty(
+    reference_point: bpy.props.PointerProperty(
         type=bpy.types.Object,
-        name="Frog reference",  # noqa
-        description="Reference object for the frog marker. Must be parented to ")  # noqa
+       name="Reference Point",  # noqa
+        description="Reference object placed on the bow model. Must be child of the model.")  # noqa
+    reference_marker: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Reference Marker",  # noqa
+        description="Marker to be aligned with reference point.")  # noqa
 
     rigidbody: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Rigidbody",  # noqa
         description="Rigidbody object representing the bow.")  # noqa
 
-    frog: bpy.props.PointerProperty(
+    stick: bpy.props.PointerProperty(
         type=bpy.types.Object,
-        name="Frog marker",  # noqa
-        description="Marker at the bottom of the frog.")  # noqa
+        name="Stick marker",  # noqa
+        description="Marker at stick.")  # noqa
     tip: bpy.props.PointerProperty(
         type=bpy.types.Object,
         name="Tip marker",  # noqa
