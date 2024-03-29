@@ -18,6 +18,7 @@
 
 import bpy
 
+from .ot_generate_empty import MIC_OT_GenerateEmpty
 from .ot_generate_armature import MIC_OT_GenerateArmature
 from .ot_preprocess_data import MIC_OT_PreprocessData, PreprocessedData
 from .ot_load_data import MIC_OT_LoadData, RawData
@@ -50,4 +51,5 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
             return
 
         layout.separator()
+        layout.operator(MIC_OT_GenerateEmpty.bl_idname)
         layout.operator(MIC_OT_GenerateArmature.bl_idname)
