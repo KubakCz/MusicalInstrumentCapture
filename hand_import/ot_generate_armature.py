@@ -199,7 +199,7 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
         ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))   # rot from local to world space
         ws_irots[joint.value] = ws_irot
         ws_rot = ws_irot.transposed()                         # rot from world to local space
-        loc_rot = (ws_irots[0] @ ws_rot).to_quaternion()
+        loc_rot = (ws_irots[predecessor.value] @ ws_rot).to_quaternion()
 
         curves = rot_fcurves[joint.value]
         curves[0].keyframe_points.insert(frame_time, loc_rot.w, options={'FAST'})
