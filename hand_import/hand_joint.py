@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Contains the HandJoint enum and related utilities."""
+"""Contains the HandJoint enum and methods for working with this enum."""
 
 from enum import Enum
 from typing import List, Optional
@@ -45,13 +45,13 @@ class HandJoint(Enum):
     PINKY_TIP = 20
 
     def predecessor(self) -> Optional['HandJoint']:
-        """Returns the predecessor of this joint, or None if there is none."""
+        """Returns the predecessor of this joint, or None."""
         if self.value == 0:
             return None
         return HandJoint._predecessors[self.value]
 
     def successors(self) -> List['HandJoint']:
-        """Returns the successor of this joint, or None if there is none."""
+        """Returns all successors of this joint."""
         return HandJoint._successors[self.value]
 
     def is_tip(self) -> bool:
@@ -65,6 +65,10 @@ class HandJoint(Enum):
     def get_second_and_third_finger_joints() -> List['HandJoint']:
         """List of second and third phalanx joints of each finger."""
         return HandJoint._second_and_third_finger_joints
+
+    def get_tips() -> List['HandJoint']:
+        """List of tip joints of each finger."""
+        return HandJoint._tip_joints
 
     def __str__(self):
         return self.name.replace('_', ' ').title()
@@ -118,15 +122,6 @@ HandJoint._successors = [
     []                       # PINKY_TIP
 ]
 
-
-HandJoint._tip_joints = [
-    HandJoint.THUMB_TIP,
-    HandJoint.INDEX_TIP,
-    HandJoint.MIDDLE_TIP,
-    HandJoint.RING_TIP,
-    HandJoint.PINKY_TIP
-]
-
 HandJoint._first_finger_joints = [
     HandJoint.THUMB_1,
     HandJoint.INDEX_1,
@@ -146,4 +141,12 @@ HandJoint._second_and_third_finger_joints = [
     HandJoint.RING_3,
     HandJoint.PINKY_2,
     HandJoint.PINKY_3
+]
+
+HandJoint._tip_joints = [
+    HandJoint.THUMB_TIP,
+    HandJoint.INDEX_TIP,
+    HandJoint.MIDDLE_TIP,
+    HandJoint.RING_TIP,
+    HandJoint.PINKY_TIP
 ]

@@ -148,8 +148,9 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
 
         # Loc position
         to_joint = frame_data.world_positions[joint.value] - wrist_loc_ws
-        to_joint_scaled = to_joint.normalized() * average_joint_distances[joint.value]
-        location = ws_irots[0] @ to_joint_scaled
+        # to_joint_scaled = to_joint.normalized() * average_joint_distances[joint.value]
+        # location = ws_irots[0] @ to_joint_scaled
+        location = ws_irots[0] @ to_joint
 
         curves = loc_fcurves[joint.value]
         curves[0].keyframe_points.insert(frame_time, location.x, options={'FAST'})
@@ -176,24 +177,49 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
 
     for joint in HandJoint.get_second_and_third_finger_joints():
         predecessor = joint.predecessor()
-        assert predecessor is not None
+        successor = joint.successors()[0]  # all joints have only one successor
 
-        joint_loc_rot = Matrix().to_3x3()  # use identity matrix for now
-        joint_ws_rot = ws_irots[predecessor.value] @ joint_loc_rot
-        ws_irots.append(joint_ws_rot)
+        # Define finger plane
+        to_predecessor = frame_data.world_positions[predecessor.value] - frame_data.world_positions[joint.value]
+        to_successor = frame_data.world_positions[successor.value] - frame_data.world_positions[joint.value]
+        finger_plane_normal = to_predecessor.cross(to_successor).normalized()
 
-        joint_ws_pos = frame_data.world_positions[joint.value]
-        joint_loc_offset = joint_ws_pos - frame_data.world_positions[predecessor.value]
-        joint_loc_pos = ws_irots[predecessor.value] @ joint_loc_offset
-        ws_irots[joint.value] = ws_irots[predecessor.value] @ joint_loc_rot
-
-        # Insert local position keyframe
+        # Loc position
+        # Ignore average dist for now
+        location = ws_irots[predecessor.value] @ -to_predecessor
         curves = loc_fcurves[joint.value]
-        curves[0].keyframe_points.insert(frame_time, joint_loc_pos.x, options={'FAST'})
-        curves[1].keyframe_points.insert(frame_time, joint_loc_pos.y, options={'FAST'})
-        curves[2].keyframe_points.insert(frame_time, joint_loc_pos.z, options={'FAST'})
+        curves[0].keyframe_points.insert(frame_time, location.x, options={'FAST'})
+        curves[1].keyframe_points.insert(frame_time, location.y, options={'FAST'})
+        curves[2].keyframe_points.insert(frame_time, location.z, options={'FAST'})
 
-        # Insert local rotation keyframe
+        # Loc rotation
+        x_axis_ws = finger_plane_normal
+        y_axis_ws = to_successor.normalized()
+        z_axis_ws = x_axis_ws.cross(y_axis_ws).normalized()
+        ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))   # rot from local to world space
+        ws_irots[joint.value] = ws_irot
+        ws_rot = ws_irot.transposed()                         # rot from world to local space
+        loc_rot = (ws_irots[0] @ ws_rot).to_quaternion()
+
+        curves = rot_fcurves[joint.value]
+        curves[0].keyframe_points.insert(frame_time, loc_rot.w, options={'FAST'})
+        curves[1].keyframe_points.insert(frame_time, loc_rot.x, options={'FAST'})
+        curves[2].keyframe_points.insert(frame_time, loc_rot.y, options={'FAST'})
+        curves[3].keyframe_points.insert(frame_time, loc_rot.z, options={'FAST'})
+
+    for joint in HandJoint.get_tips():
+        predecessor = joint.predecessor()
+
+        # Loc position
+        to_joint = frame_data.world_positions[joint.value] - frame_data.world_positions[predecessor.value]
+        location = ws_irots[predecessor.value] @ to_joint
+
+        curves = loc_fcurves[joint.value]
+        curves[0].keyframe_points.insert(frame_time, location.x, options={'FAST'})
+        curves[1].keyframe_points.insert(frame_time, location.y, options={'FAST'})
+        curves[2].keyframe_points.insert(frame_time, location.z, options={'FAST'})
+
+        # Loc rotation
         curves = rot_fcurves[joint.value]
         curves[0].keyframe_points.insert(frame_time, 1, options={'FAST'})
         curves[1].keyframe_points.insert(frame_time, 0, options={'FAST'})
@@ -230,5 +256,7 @@ class MIC_OT_GenerateArmature(bpy.types.Operator):
             print(f"Generating hand {preprocessed_hand_data.data.name}...")
             generate_hand(preprocessed_hand_data, (i/4, 0, 0))
             i += 1
+
+        bpy.ops.object.select_all(action='DESELECT')
 
         return {'FINISHED'}
