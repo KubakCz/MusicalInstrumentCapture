@@ -44,17 +44,22 @@ class PreprocessedData:
 
 class HandAlignData(bpy.types.PropertyGroup):
     """Property group for storing hand alignment data."""
-    # data preprocessing
+    # Data preprocessing
     low_pass_cutoff: bpy.props.FloatProperty(
         name="Low Pass Cutoff",  # noqa
         description="Low pass filter cutoff frequency.",  # noqa
         default=6,
         min=0)
 
-    # data processing
     palm_size: bpy.props.FloatProperty(
         name="Palm Size",  # noqa
         description="Size of the palm.",  # noqa
         default=0.1,
         min=0,
         unit='LENGTH')  # noqa
+
+    # Hand generation
+    use_average_joint_distance: bpy.props.BoolProperty(
+        name="Constant joint distance",  # noqa
+        description="If enabled, hand joints will have constant distance throughout the animation. This distance is calculated as the average distance from the whole animation.",  # noqa
+        default=True)

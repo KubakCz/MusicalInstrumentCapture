@@ -127,8 +127,12 @@ def get_hand_rotation_matrix(data: HandFrame, handedness) -> Matrix:
     return mat
 
 
-def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float], fcurves: FCurves):
-    """Inserts a keyframe for the given frame data into the fcurves."""
+def insert_keyframe(frame_data: HandFrame, average_joint_distances: List[float], fcurves: FCurves):
+    """
+    Inserts a keyframe for the given frame data into the fcurves.
+    The average_joint_distances are used to scale the joint positions.
+    If average_joint_distances is None, the joint positions are not scaled.
+    """
     loc_fcurves, rot_fcurves = fcurves
 
     # Inverse rotations from local to world space
@@ -148,8 +152,8 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
 
         # Loc position
         to_joint = frame_data.world_positions[joint.value] - wrist_loc_ws
-        # to_joint_scaled = to_joint.normalized() * average_joint_distances[joint.value]
-        # location = ws_irots[0] @ to_joint_scaled
+        if average_joint_distances is not None:
+            to_joint = to_joint.normalized() * average_joint_distances[joint.value]
         location = ws_irots[0] @ to_joint
 
         curves = loc_fcurves[joint.value]
@@ -185,8 +189,10 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
         finger_plane_normal = to_predecessor.cross(to_successor).normalized()
 
         # Loc position
-        # Ignore average dist for now
-        location = ws_irots[predecessor.value] @ -to_predecessor
+        to_joint = -to_predecessor
+        if average_joint_distances is not None:
+            to_joint = to_joint.normalized() * average_joint_distances[joint.value]
+        location = ws_irots[predecessor.value] @ to_joint
         curves = loc_fcurves[joint.value]
         curves[0].keyframe_points.insert(frame_time, location.x, options={'FAST'})
         curves[1].keyframe_points.insert(frame_time, location.y, options={'FAST'})
@@ -212,6 +218,8 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
 
         # Loc position
         to_joint = frame_data.world_positions[joint.value] - frame_data.world_positions[predecessor.value]
+        if average_joint_distances is not None:
+            to_joint = to_joint.normalized() * average_joint_distances[joint.value]
         location = ws_irots[predecessor.value] @ to_joint
 
         curves = loc_fcurves[joint.value]
@@ -227,13 +235,14 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
         curves[3].keyframe_points.insert(frame_time, 0, options={'FAST'})
 
 
-def generate_hand(hand_data: PreprocessedHandData, location: Vector) -> bpy.types.Object:
+def generate_hand(hand_data: PreprocessedHandData, use_avg_distance: bool, location: Vector) -> bpy.types.Object:
     """Generates an animated hand based on the given hand data."""
     hand_armature = spawn_hand_armature(hand_data, location)
     fcurves = create_animation_data(hand_data.data.name, hand_armature)
     last_timestamp = hand_data.data.animation_data[-1].timestamp
+    avg_distances = hand_data.average_joint_distance if use_avg_distance else None
     for frame in hand_data.data.animation_data:
-        insert_keyframe(frame, hand_data.average_joint_distance, fcurves)
+        insert_keyframe(frame, avg_distances, fcurves)
         print(frame.timestamp / last_timestamp)
     return hand_armature
 
@@ -254,7 +263,7 @@ class MIC_OT_GenerateArmature(bpy.types.Operator):
         i = 0
         for preprocessed_hand_data in preprocessed_data:
             print(f"Generating hand {preprocessed_hand_data.data.name}...")
-            generate_hand(preprocessed_hand_data, (i/4, 0, 0))
+            generate_hand(preprocessed_hand_data, context.scene.hand_align_data.use_average_joint_distance, (i/4, 0, 0))
             i += 1
 
         bpy.ops.object.select_all(action='DESELECT')

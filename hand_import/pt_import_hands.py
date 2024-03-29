@@ -51,5 +51,6 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
             return
 
         layout.separator()
-        layout.operator(MIC_OT_GenerateEmpty.bl_idname)
+        layout.prop(hand_align_data, "use_average_joint_distance")
         layout.operator(MIC_OT_GenerateArmature.bl_idname)
+        layout.operator(MIC_OT_GenerateEmpty.bl_idname)
