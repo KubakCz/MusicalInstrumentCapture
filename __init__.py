@@ -53,8 +53,21 @@ def register():
         from .hand_import import pt_import_hands
         bpy.utils.register_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
 
-        from .hand_import import ot_import_hands
-        bpy.utils.register_class(ot_import_hands.MIC_OT_ImportHands)
+        # from .hand_import import ot_import_hands
+        # bpy.utils.register_class(ot_import_hands.MIC_OT_CreateHands)
+
+        from .hand_import import ot_load_data
+        bpy.utils.register_class(ot_load_data.MIC_OT_LoadData)
+
+        from .hand_import import ot_preprocess_data
+        bpy.utils.register_class(ot_preprocess_data.MIC_OT_PreprocessData)
+
+        from .hand_import import ot_generate_armature
+        bpy.utils.register_class(ot_generate_armature.MIC_OT_GenerateArmature)
+
+        from .hand_import import import_hands_data
+        bpy.utils.register_class(import_hands_data.HandAlignData)
+        bpy.types.Scene.hand_align_data = bpy.props.PointerProperty(type=import_hands_data.HandAlignData)
 
         from .rigidbody_align import pt_align
         bpy.utils.register_class(pt_align.MIC_PT_Align)
@@ -85,9 +98,26 @@ def unregister():
     if pt_import_hands.MIC_PT_MusicalInstrumentCapture.is_registered:
         bpy.utils.unregister_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
 
-    from .hand_import import ot_import_hands
-    if ot_import_hands.MIC_OT_ImportHands.is_registered:
-        bpy.utils.unregister_class(ot_import_hands.MIC_OT_ImportHands)
+    # from .hand_import import ot_import_hands
+    # if ot_import_hands.MIC_OT_CreateHands.is_registered:
+    #     bpy.utils.unregister_class(ot_import_hands.MIC_OT_CreateHands)
+
+    from .hand_import import ot_load_data
+    if ot_load_data.MIC_OT_LoadData.is_registered:
+        bpy.utils.unregister_class(ot_load_data.MIC_OT_LoadData)
+
+    from .hand_import import ot_preprocess_data
+    if ot_preprocess_data.MIC_OT_PreprocessData.is_registered:
+        bpy.utils.unregister_class(ot_preprocess_data.MIC_OT_PreprocessData)
+
+    from .hand_import import ot_generate_armature
+    if ot_generate_armature.MIC_OT_GenerateArmature.is_registered:
+        bpy.utils.unregister_class(ot_generate_armature.MIC_OT_GenerateArmature)
+
+    from .hand_import import import_hands_data
+    if import_hands_data.HandAlignData.is_registered:
+        bpy.utils.unregister_class(import_hands_data.HandAlignData)
+        del bpy.types.Scene.hand_align_data
 
     from .rigidbody_align import pt_align
     if pt_align.MIC_PT_Align.is_registered:
@@ -104,10 +134,10 @@ def unregister():
     from .rigidbody_align import align_data
     if align_data.ViolinAlignData.is_registered:
         bpy.utils.unregister_class(align_data.ViolinAlignData)
-        del bpy.types.Scene.violin_align_data  # type: ignore
+        del bpy.types.Scene.violin_align_data
     if align_data.BowAlignData.is_registered:
         bpy.utils.unregister_class(align_data.BowAlignData)
-        del bpy.types.Scene.bow_align_data  # type: ignore
+        del bpy.types.Scene.bow_align_data
 
     if DEPENDENCY_PT_Warning.is_registered:
         bpy.utils.unregister_class(DEPENDENCY_PT_Warning)

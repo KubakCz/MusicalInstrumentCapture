@@ -17,7 +17,7 @@
 """Contains the HandJoint enum and related utilities."""
 
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 
 class HandJoint(Enum):
@@ -50,9 +50,21 @@ class HandJoint(Enum):
             return None
         return HandJoint._predecessors[self.value]
 
+    def successors(self) -> List['HandJoint']:
+        """Returns the successor of this joint, or None if there is none."""
+        return HandJoint._successors[self.value]
+
     def is_tip(self) -> bool:
         """Returns whether this joint is a tip joint."""
         return self in HandJoint._tip_joints
+
+    def get_first_finger_joints() -> List['HandJoint']:
+        """List of first phalanx joints of each finger."""
+        return HandJoint._first_finger_joints
+
+    def get_second_and_third_finger_joints() -> List['HandJoint']:
+        """List of second and third phalanx joints of each finger."""
+        return HandJoint._second_and_third_finger_joints
 
     def __str__(self):
         return self.name.replace('_', ' ').title()
@@ -82,10 +94,56 @@ HandJoint._predecessors = [
     HandJoint.PINKY_3,   # PINKY_TIP
 ]
 
+HandJoint._successors = [
+    [HandJoint.THUMB_1, HandJoint.INDEX_1, HandJoint.MIDDLE_1, HandJoint.RING_1, HandJoint.PINKY_1],  # WRIST
+    [HandJoint.THUMB_2],     # THUMB1
+    [HandJoint.THUMB_3],     # THUMB2
+    [HandJoint.THUMB_TIP],   # THUMB3
+    [],                      # THUMB_TIP
+    [HandJoint.INDEX_2],     # INDEX1
+    [HandJoint.INDEX_3],     # INDEX2
+    [HandJoint.INDEX_TIP],   # INDEX3
+    [],                      # INDEX_TIP
+    [HandJoint.MIDDLE_2],    # MIDDLE1
+    [HandJoint.MIDDLE_3],    # MIDDLE2
+    [HandJoint.MIDDLE_TIP],  # MIDDLE3
+    [],                      # MIDDLE_TIP
+    [HandJoint.RING_2],      # RING1
+    [HandJoint.RING_3],      # RING2
+    [HandJoint.RING_TIP],    # RING3
+    [],                      # RING_TIP
+    [HandJoint.PINKY_2],     # PINKY1
+    [HandJoint.PINKY_3],     # PINKY2
+    [HandJoint.PINKY_TIP],   # PINKY3
+    []                       # PINKY_TIP
+]
+
+
 HandJoint._tip_joints = [
     HandJoint.THUMB_TIP,
     HandJoint.INDEX_TIP,
     HandJoint.MIDDLE_TIP,
     HandJoint.RING_TIP,
     HandJoint.PINKY_TIP
+]
+
+HandJoint._first_finger_joints = [
+    HandJoint.THUMB_1,
+    HandJoint.INDEX_1,
+    HandJoint.MIDDLE_1,
+    HandJoint.RING_1,
+    HandJoint.PINKY_1
+]
+
+HandJoint._second_and_third_finger_joints = [
+    HandJoint.THUMB_2,
+    HandJoint.THUMB_3,
+    HandJoint.INDEX_2,
+    HandJoint.INDEX_3,
+    HandJoint.MIDDLE_2,
+    HandJoint.MIDDLE_3,
+    HandJoint.RING_2,
+    HandJoint.RING_3,
+    HandJoint.PINKY_2,
+    HandJoint.PINKY_3
 ]
