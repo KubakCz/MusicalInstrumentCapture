@@ -44,7 +44,7 @@ class MIC_OT_LoadData(bpy.types.Operator):
                 print("Data loaded successfully.")
                 RawData.raw_data = data
                 RawData.filename = os.path.basename(self.filepath)
-                PreprocessedData.data = None  # Reset preprocessed data
+                PreprocessedData.hands = None  # Reset preprocessed data
         except marshmallow.exceptions.ValidationError:
             self.report({'ERROR'}, "The selected file is not in the correct format.")
             return {'CANCELLED'}

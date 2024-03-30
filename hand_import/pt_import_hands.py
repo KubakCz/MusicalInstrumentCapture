@@ -44,10 +44,13 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
 
         layout.separator()
         layout.prop(hand_align_data, "palm_size")
-        layout.label(text="Preprocessed data: None" if PreprocessedData.data is None else "Preprocessed data: Ready")
+        layout.prop(hand_align_data, "cutoff_frequency")
+        layout.prop(hand_align_data, "filter_order")
+        layout.prop(hand_align_data, "samples_per_frame")
+        layout.label(text="Preprocessed data: None" if PreprocessedData.hands is None else "Preprocessed data: Ready")
         layout.operator(MIC_OT_PreprocessData.bl_idname)
 
-        if PreprocessedData.data is None:
+        if PreprocessedData.hands is None:
             return
 
         layout.separator()
