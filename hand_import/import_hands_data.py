@@ -16,45 +16,90 @@
 
 """Classes for storing hand alignment data."""
 
-from typing import List
 import bpy
-from .hand_types import HandAnimationData
+from typing import List, Optional
+from dataclasses import dataclass
+from mathutils import Vector
+
+from .hand_joint import HandJoint
+from .hand_types import HandAnimationData, HandFrame
 
 
 class RawData:
-    filename: str = None
-    raw_data: List[HandAnimationData] = None
+    filename: Optional[str] = None
+    raw_data: Optional[List[HandAnimationData]] = None
 
 
+@dataclass
 class PreprocessedHandData:
     """
-    Class for storing preprocessed hand data.
+    Class for storing preprocessed data of a single hand.
     Contains the preprocessed data and average joint distances.
     """
+    name: str
+    handedness: str
 
-    def __init__(self):
-        self.data: HandAnimationData = None
-        self.average_joint_distance: List[float] = None  # Average distance from previous joint
+    # List of timestamps of the frames
+    timestamps: List[float]
+
+    # List of world position in data[joint][frame] format
+    data: List[List[Vector]]
+
+    # Average distance from previous joint
+    average_joint_distance: List[float]
 
 
 class PreprocessedData:
-    """Class for storing preprocessed data."""
-    data: List[PreprocessedHandData] = None
+    """Class for storing preprocessed data of multiple hands."""
+    hands: Optional[List[PreprocessedHandData]] = None
+
+
+def get_ws_pos(hand_data: PreprocessedHandData, frame_idx: int) -> List[Vector]:
+    return [hand_data.data[joint.value][frame_idx] for joint in HandJoint]
+
+
+def preprocessed_2_hand_anim(hand_data: PreprocessedHandData) -> HandAnimationData:
+    """Temporary function to convert preprocessed hand data to HandAnimationData."""
+    frames = [
+        HandFrame(
+            timestamp=hand_data.timestamps[i],
+            normalized_positions=[],
+            world_positions=get_ws_pos(hand_data, i)
+        ) for i in range(len(hand_data.timestamps))
+    ]
+    return HandAnimationData(name=hand_data.name, animation_data=frames)
 
 
 class HandAlignData(bpy.types.PropertyGroup):
     """Property group for storing hand alignment data."""
-    # data preprocessing
-    low_pass_cutoff: bpy.props.FloatProperty(
-        name="Low Pass Cutoff",  # noqa
-        description="Low pass filter cutoff frequency.",  # noqa
-        default=6,
-        min=0)
-
-    # data processing
+    # Data preprocessing
     palm_size: bpy.props.FloatProperty(
         name="Palm Size",  # noqa
         description="Size of the palm.",  # noqa
         default=0.1,
         min=0,
         unit='LENGTH')  # noqa
+
+    cutoff_frequency: bpy.props.FloatProperty(
+        name="Frequency Cutoff (Hz)",  # noqa
+        description="Lower values give a smoother curve.",  # noqa
+        default=6,
+        min=0)
+
+    filter_order: bpy.props.IntProperty(
+        name="Filter Order",  # noqa
+        description="Higher values produce a harder frequency cutoff.",  # noqa
+        default=6,
+        min=1)
+
+    samples_per_frame: bpy.props.IntProperty(
+        name="Samples per Frame",  # noqa
+        description="How many samples to calculate per frame, helps with subframe data.",  # noqa
+        default=2,
+        min=1)
+
+    # Hand generation
+    use_average_joint_distance: bpy.props.BoolProperty(
+        name="Constant joint distance",  # noqa
+        description="If enabled, hand joints will have constant distance throughout the animation. This distance is calculated as the average distance from the whole animation.",  # noqa
+        default=True)

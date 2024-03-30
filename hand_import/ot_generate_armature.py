@@ -14,14 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Operator for loading hand data to memory."""
+"""Operator for transforming preprocessed data into armature with animation."""
 
 from typing import List, Optional, Tuple
 import bpy
 from mathutils import Vector, Matrix
 from .hand_joint import HandJoint
 from .hand_types import HandFrame
-from .import_hands_data import PreprocessedHandData
+from .import_hands_data import PreprocessedHandData, preprocessed_2_hand_anim
 from .ot_preprocess_data import PreprocessedData
 
 
@@ -30,7 +30,7 @@ def spawn_hand_armature(hand_data: PreprocessedHandData, location: Vector) -> bp
     # Create a new armature object
     bpy.ops.object.armature_add(location=location)
     armature = bpy.context.object
-    armature.name = hand_data.data.name
+    armature.name = hand_data.name
 
     # Enter edit mode to add bones
     bpy.context.view_layer.objects.active = armature
@@ -127,8 +127,12 @@ def get_hand_rotation_matrix(data: HandFrame, handedness) -> Matrix:
     return mat
 
 
-def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float], fcurves: FCurves):
-    """Inserts a keyframe for the given frame data into the fcurves."""
+def insert_keyframe(frame_data: HandFrame, average_joint_distances: List[float], fcurves: FCurves):
+    """
+    Inserts a keyframe for the given frame data into the fcurves.
+    The average_joint_distances are used to scale the joint positions.
+    If average_joint_distances is None, the joint positions are not scaled.
+    """
     loc_fcurves, rot_fcurves = fcurves
 
     # Inverse rotations from local to world space
@@ -148,8 +152,8 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
 
         # Loc position
         to_joint = frame_data.world_positions[joint.value] - wrist_loc_ws
-        # to_joint_scaled = to_joint.normalized() * average_joint_distances[joint.value]
-        # location = ws_irots[0] @ to_joint_scaled
+        if average_joint_distances is not None:
+            to_joint = to_joint.normalized() * average_joint_distances[joint.value]
         location = ws_irots[0] @ to_joint
 
         curves = loc_fcurves[joint.value]
@@ -185,8 +189,10 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
         finger_plane_normal = to_predecessor.cross(to_successor).normalized()
 
         # Loc position
-        # Ignore average dist for now
-        location = ws_irots[predecessor.value] @ -to_predecessor
+        to_joint = -to_predecessor
+        if average_joint_distances is not None:
+            to_joint = to_joint.normalized() * average_joint_distances[joint.value]
+        location = ws_irots[predecessor.value] @ to_joint
         curves = loc_fcurves[joint.value]
         curves[0].keyframe_points.insert(frame_time, location.x, options={'FAST'})
         curves[1].keyframe_points.insert(frame_time, location.y, options={'FAST'})
@@ -199,7 +205,7 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
         ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))   # rot from local to world space
         ws_irots[joint.value] = ws_irot
         ws_rot = ws_irot.transposed()                         # rot from world to local space
-        loc_rot = (ws_irots[0] @ ws_rot).to_quaternion()
+        loc_rot = (ws_irots[predecessor.value] @ ws_rot).to_quaternion()
 
         curves = rot_fcurves[joint.value]
         curves[0].keyframe_points.insert(frame_time, loc_rot.w, options={'FAST'})
@@ -212,6 +218,8 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
 
         # Loc position
         to_joint = frame_data.world_positions[joint.value] - frame_data.world_positions[predecessor.value]
+        if average_joint_distances is not None:
+            to_joint = to_joint.normalized() * average_joint_distances[joint.value]
         location = ws_irots[predecessor.value] @ to_joint
 
         curves = loc_fcurves[joint.value]
@@ -227,13 +235,15 @@ def insert_keyframe(frame_data: HandFrame,  average_joint_distances: List[float]
         curves[3].keyframe_points.insert(frame_time, 0, options={'FAST'})
 
 
-def generate_hand(hand_data: PreprocessedHandData, location: Vector) -> bpy.types.Object:
+def generate_hand(hand_data: PreprocessedHandData, use_avg_distance: bool, location: Vector) -> bpy.types.Object:
     """Generates an animated hand based on the given hand data."""
     hand_armature = spawn_hand_armature(hand_data, location)
-    fcurves = create_animation_data(hand_data.data.name, hand_armature)
-    last_timestamp = hand_data.data.animation_data[-1].timestamp
-    for frame in hand_data.data.animation_data:
-        insert_keyframe(frame, hand_data.average_joint_distance, fcurves)
+    fcurves = create_animation_data(hand_data.name, hand_armature)
+    anim_data = preprocessed_2_hand_anim(hand_data)  # TODO: remove this temporary function
+    last_timestamp = anim_data.animation_data[-1].timestamp
+    avg_distances = hand_data.average_joint_distance if use_avg_distance else None
+    for frame in anim_data.animation_data:
+        insert_keyframe(frame, avg_distances, fcurves)
         print(frame.timestamp / last_timestamp)
     return hand_armature
 
@@ -246,15 +256,15 @@ class MIC_OT_GenerateArmature(bpy.types.Operator):
 
     def execute(self, context):
         print("--- Executing GenerateArmature ---")
-        if PreprocessedData.data is None:
+        if PreprocessedData.hands is None:
             self.report({'ERROR'}, "No data loaded.")
             return {'CANCELLED'}
 
-        preprocessed_data = PreprocessedData.data
+        preprocessed_data = PreprocessedData.hands
         i = 0
         for preprocessed_hand_data in preprocessed_data:
-            print(f"Generating hand {preprocessed_hand_data.data.name}...")
-            generate_hand(preprocessed_hand_data, (i/4, 0, 0))
+            print(f"Generating hand {preprocessed_hand_data.name}...")
+            generate_hand(preprocessed_hand_data, context.scene.hand_align_data.use_average_joint_distance, (i/4, 0, 0))
             i += 1
 
         bpy.ops.object.select_all(action='DESELECT')
