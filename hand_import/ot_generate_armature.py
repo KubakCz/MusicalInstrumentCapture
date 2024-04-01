@@ -18,10 +18,12 @@
 
 from typing import List, Optional, Tuple
 import bpy
-from mathutils import Vector, Matrix
+from mathutils import Vector, Matrix, Quaternion
+
+from .fcurves import JointFCurves
 from .hand_joint import HandJoint
 from .hand_types import HandFrame
-from .import_hands_data import PreprocessedHandData, preprocessed_2_hand_anim
+from .import_hands_data import PreprocessedHandData, ProcessedHandData
 from .ot_preprocess_data import PreprocessedData
 
 
@@ -62,18 +64,12 @@ def spawn_hand_armature(hand_data: PreprocessedHandData, location: Vector) -> bp
     return armature
 
 
-LocFCurves = List[Tuple[bpy.types.FCurve, bpy.types.FCurve, bpy.types.FCurve]]
-RotFCurves = List[Tuple[bpy.types.FCurve, bpy.types.FCurve, bpy.types.FCurve, bpy.types.FCurve]]
-FCurves = Tuple[LocFCurves, RotFCurves]
-
-
-def create_animation_data(hand_name: str, armature: bpy.types.Object) -> FCurves:
+def create_animation_data(hand_name: str, armature: bpy.types.Object) -> List[JointFCurves]:
     """
     Creates empty animation data for the given armature
     and returns location and rotation fcurves for each bone.
     """
-    loc_fcurves = []
-    rot_fcurves = []
+    fcurves: List[JointFCurves] = []
 
     # Create one action for the whole armature
     action = bpy.data.actions.new(name=hand_name)
@@ -82,27 +78,12 @@ def create_animation_data(hand_name: str, armature: bpy.types.Object) -> FCurves
 
     # Create fcurves for each bone
     for bone in armature.pose.bones:
-        loc = tuple(
-            action.fcurves.new(
-                data_path=f'pose.bones["{bone.name}"].location',
-                index=i,
-                action_group=bone.name) for i in range(3)
-        )
-        for curve in loc:
-            curve.color_mode = 'AUTO_RGB'
-        loc_fcurves.append(loc)
-
         bone.rotation_mode = 'QUATERNION'
-        rot = tuple(
-            action.fcurves.new(
-                data_path=f'pose.bones["{bone.name}"].rotation_quaternion',
-                index=i,
-                action_group=bone.name) for i in range(4)
+        fcurves.append(
+            JointFCurves(action, f'pose.bones["{bone.name}"]', bone.name)
         )
-        for curve in rot:
-            curve.color_mode = 'AUTO_YRGB'
-        rot_fcurves.append(rot)
-    return loc_fcurves, rot_fcurves
+
+    return fcurves
 
 
 def get_hand_rotation_matrix(data: HandFrame, handedness) -> Matrix:
@@ -127,7 +108,7 @@ def get_hand_rotation_matrix(data: HandFrame, handedness) -> Matrix:
     return mat
 
 
-def insert_keyframe(frame_data: HandFrame, average_joint_distances: List[float], fcurves: FCurves):
+def insert_keyframe(frame_data: HandFrame, average_joint_distances: List[float], fcurves):
     """
     Inserts a keyframe for the given frame data into the fcurves.
     The average_joint_distances are used to scale the joint positions.
@@ -235,16 +216,241 @@ def insert_keyframe(frame_data: HandFrame, average_joint_distances: List[float],
         curves[3].keyframe_points.insert(frame_time, 0, options={'FAST'})
 
 
+def process_wrist_frame(
+        wrist_loc: Vector,
+        index_loc: Vector,
+        middle_loc: Vector,
+        ring_loc: Vector,
+        is_left: bool) -> Matrix:
+    """
+    Returns the inverse rotation matrix of the wrist based on the given joint locations.
+    Locations are in world space.
+    """
+    to_index = index_loc - wrist_loc
+    to_middle = middle_loc - wrist_loc
+    to_ring = ring_loc - wrist_loc
+
+    # y-axis is the direction from the wrist to the middle finger
+    y_axis = to_middle.normalized()
+
+    if is_left:
+        palm_dir = to_ring.cross(to_index).normalized()
+    else:
+        palm_dir = to_index.cross(to_ring).normalized()
+
+    # x-axis is the direction perpendicular to the palm direction and y-axis
+    x_axis = palm_dir.cross(y_axis).normalized()
+    # z-axis is palm direction adjusted to be perpendicular to x and y axes
+    z_axis = x_axis.cross(y_axis).normalized()
+
+    return Matrix((x_axis, y_axis, z_axis))
+
+
+def process_wrist(hand_data: PreprocessedHandData) -> List[Matrix]:
+    """Returns list of wrist inverse rotation matrices for each frame."""
+    is_left = hand_data.handedness == 'LEFT'
+    result = [None] * len(hand_data)
+    for i in range(len(hand_data)):
+        result[i] = process_wrist_frame(
+            hand_data.data[HandJoint.WRIST.value][i],
+            hand_data.data[HandJoint.INDEX_1.value][i],
+            hand_data.data[HandJoint.MIDDLE_1.value][i],
+            hand_data.data[HandJoint.RING_1.value][i],
+            is_left
+        )
+    return result
+
+
+def process_1_joint_frame(
+        joint_loc: Vector,
+        wrist_loc: Vector,
+        wrist_irot: Matrix,
+        succ_loc: Vector,
+        join_dist: Optional[float]) -> Tuple[Vector, Quaternion, Matrix]:
+    """
+    Returns locala location, local rotation, and global inverse rotation matrix
+    of the first finger joint (parented to wrist).
+    Inputs are in world space.
+    If join_dist is not None, the joint location is scaled by this distance.
+    """
+    # Loc location
+    to_joint = joint_loc - wrist_loc
+    if join_dist is not None:
+        to_joint = to_joint.normalized() * join_dist
+    loc_loc = wrist_irot @ to_joint
+
+    # Glob rotation
+    to_succ = succ_loc - joint_loc
+    wrist_z_ws = wrist_irot[2]  # palm direction
+    y_axis_ws = to_succ.normalized()                      # joint -> successor
+    x_axis_ws = y_axis_ws.cross(wrist_z_ws).normalized()  # perpendicular to y-axis and palm direction
+    z_axis_ws = x_axis_ws.cross(y_axis_ws).normalized()
+    ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))   # rot from local to world space
+
+    # Loc rotation
+    ws_rot = ws_irot.transposed()                         # rot from world to local space
+    loc_rot = (wrist_irot @ ws_rot).to_quaternion()
+
+    return loc_loc, loc_rot, ws_irot
+
+
+def process_1_joint(joint: HandJoint, hand_data: PreprocessedHandData, wrist_irots: List[Matrix], use_avg_dist: bool) \
+        -> Tuple[List[Vector], List[Quaternion], List[Matrix]]:
+    """
+    Returns list of local locations, local rotations, and global inverse rotation matrices
+    of the first finger joint (parented to wrist).
+    """
+    result = ([None] * len(hand_data), [None] * len(hand_data), [None] * len(hand_data))
+    joint_locs = hand_data.data[joint.value]
+    wrist_locs = hand_data.data[HandJoint.WRIST.value]
+    succ_locs = hand_data.data[joint.successors()[0].value]
+    join_dist = hand_data.average_joint_distance[joint.value] if use_avg_dist else None
+    for i in range(len(hand_data)):
+        result[0][i], result[1][i], result[2][i] = process_1_joint_frame(
+            joint_locs[i], wrist_locs[i], wrist_irots[i], succ_locs[i], join_dist
+        )
+    return result
+
+
+def process_23_joint_frame(
+        joint_loc: Vector,
+        pred_loc: Vector,
+        pred_irot: Matrix,
+        succ_loc: Vector,
+        join_dist: Optional[float]) -> Tuple[Vector, Quaternion, Matrix]:
+    """
+    Returns locala location, local rotation, and global inverse rotation matrix
+    of the second or third finger joint (parented to previous joint).
+    Inputs are in world space.
+    If join_dist is not None, the joint location is scaled by this distance.
+    """
+    # Finger plane
+    # Note that we use joint location before avg distance scaling to preserve angles
+    to_joint = joint_loc - pred_loc
+    to_successor = succ_loc - joint_loc
+    plane_normal = to_successor.cross(to_joint).normalized()
+
+    # Loc location
+    if join_dist is not None:
+        to_joint = to_joint.normalized() * join_dist
+    loc_loc = pred_irot @ to_joint
+
+    # Glob rotation
+    x_axis_ws = plane_normal
+    y_axis_ws = to_successor.normalized()
+    z_axis_ws = x_axis_ws.cross(y_axis_ws).normalized()
+    ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))  # rot from local to world space
+
+    # Loc rotation
+    ws_rot = ws_irot.transposed()  # rot from world to local space
+    loc_rot = (pred_irot @ ws_rot).to_quaternion()
+
+    return loc_loc, loc_rot, ws_irot
+
+
+def process_23_joint(joint: HandJoint, hand_data: PreprocessedHandData, pred_irots: List[Matrix], use_avg_dist: bool) \
+        -> Tuple[List[Vector], List[Quaternion], List[Matrix]]:
+    """
+    Returns list of local locations, local rotations, and global inverse rotation matrices
+    of the second or third finger joint (parented to previous joint).
+    """
+    result = ([None] * len(hand_data), [None] * len(hand_data), [None] * len(hand_data))
+    joint_locs = hand_data.data[joint.value]
+    pred_locs = hand_data.data[joint.predecessor().value]
+    succ_locs = hand_data.data[joint.successors()[0].value]
+    join_dist = hand_data.average_joint_distance[joint.value] if use_avg_dist else None
+    for i in range(len(hand_data)):
+        result[0][i], result[1][i], result[2][i] = process_23_joint_frame(
+            joint_locs[i], pred_locs[i], pred_irots[i], succ_locs[i], join_dist
+        )
+    return result
+
+
+def process_tip_frame(
+        joint_loc: Vector,
+        pred_loc: Vector,
+        pred_irot: Matrix,
+        join_dist: Optional[float]) -> Vector:
+    """
+    Returns locala location of the tip of the finger (parented to the previous joint).
+    Inputs are in world space.
+    If join_dist is not None, the joint location is scaled by this distance.
+    """
+    # Loc location
+    to_joint = joint_loc - pred_loc
+    if join_dist is not None:
+        to_joint = to_joint.normalized() * join_dist
+    return pred_irot @ to_joint
+
+
+def process_tip(joint: HandJoint, hand_data: PreprocessedHandData, pred_irots: List[Matrix], use_avg_dist: bool) \
+        -> List[Vector]:
+    """
+    Returns list of local locations of the tip of the finger (parented to the previous joint).
+    """
+    result = [None] * len(hand_data)
+    joint_locs = hand_data.data[joint.value]
+    pred_locs = hand_data.data[joint.predecessor().value]
+    join_dist = hand_data.average_joint_distance[joint.value] if use_avg_dist else None
+    for i in range(len(hand_data)):
+        result[i] = process_tip_frame(
+            joint_locs[i], pred_locs[i], pred_irots[i], join_dist
+        )
+    return result
+
+
+def get_local_anim_data(hand_data: PreprocessedHandData, use_avg_distance: bool) -> ProcessedHandData:
+    """
+    Process worldspace hand data into local locations and rotations.
+    """
+    # list[joint][frame]
+    loc_locations: List[Optional[List[Vector]]] = [None] * len(HandJoint)
+    loc_rotations: List[Optional[List[Matrix]]] = [None] * len(HandJoint)
+    ws_irots: List[Optional[List[Matrix]]] = [None] * len(hand_data)
+
+    # Process wrist
+    ws_irots[HandJoint.WRIST.value] = process_wrist(hand_data)
+
+    # Process 1st finger joints
+    for joint in HandJoint.get_first_finger_joints():
+        loc_locations[joint.value], loc_rotations[joint.value], ws_irots[joint.value] = process_1_joint(
+            joint, hand_data, ws_irots[HandJoint.WRIST.value], use_avg_distance
+        )
+
+    # Process 2nd and 3rd finger joints
+    for joint in HandJoint.get_second_and_third_finger_joints():
+        loc_locations[joint.value], loc_rotations[joint.value], ws_irots[joint.value] = process_23_joint(
+            joint, hand_data, ws_irots[joint.predecessor().value], use_avg_distance
+        )
+
+    # Process tips
+    for joint in HandJoint.get_tips():
+        loc_locations[joint.value] = process_tip(
+            joint, hand_data, ws_irots[joint.predecessor().value], use_avg_distance
+        )
+
+    frame_numbers = list(map(lambda timestamp: timestamp * bpy.context.scene.render.fps +
+                         bpy.context.scene.frame_start, hand_data.timestamps))
+
+    return ProcessedHandData(frame_numbers, loc_locations, loc_rotations)
+
+
+def aply_local_anim_data(fcurves: List[JointFCurves], anim_data: ProcessedHandData):
+    """Applies the local animation data to the fcurves."""
+    for joint in HandJoint:
+        fcurves[joint.value].set_keyframes(
+            anim_data.frame_numbers,
+            anim_data.local_locations[joint.value],
+            anim_data.local_rotations[joint.value]
+        )
+
+
 def generate_hand(hand_data: PreprocessedHandData, use_avg_distance: bool, location: Vector) -> bpy.types.Object:
-    """Generates an animated hand based on the given hand data."""
+    """Generates an animated hand armature based on the given hand data."""
     hand_armature = spawn_hand_armature(hand_data, location)
     fcurves = create_animation_data(hand_data.name, hand_armature)
-    anim_data = preprocessed_2_hand_anim(hand_data)  # TODO: remove this temporary function
-    last_timestamp = anim_data.animation_data[-1].timestamp
-    avg_distances = hand_data.average_joint_distance if use_avg_distance else None
-    for frame in anim_data.animation_data:
-        insert_keyframe(frame, avg_distances, fcurves)
-        print(frame.timestamp / last_timestamp)
+    anim_data = get_local_anim_data(hand_data, use_avg_distance)
+    aply_local_anim_data(fcurves, anim_data)
     return hand_armature
 
 

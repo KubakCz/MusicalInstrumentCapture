@@ -19,7 +19,7 @@
 import bpy
 from typing import List, Optional
 from dataclasses import dataclass
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 
 from .hand_joint import HandJoint
 from .hand_types import HandAnimationData, HandFrame
@@ -35,6 +35,7 @@ class PreprocessedHandData:
     """
     Class for storing preprocessed data of a single hand.
     Contains the preprocessed data and average joint distances.
+    Data are stored as world space positions of the joints.
     """
     name: str
     handedness: str
@@ -48,10 +49,28 @@ class PreprocessedHandData:
     # Average distance from previous joint
     average_joint_distance: List[float]
 
+    def __len__(self):
+        """Return the number of frames in the data."""
+        return len(self.timestamps)
+
 
 class PreprocessedData:
-    """Class for storing preprocessed data of multiple hands."""
+    """
+    Class for storing preprocessed data of multiple hands.
+    Data are stored as world space positions of the joints.
+    """
     hands: Optional[List[PreprocessedHandData]] = None
+
+
+@dataclass
+class ProcessedHandData:
+    """
+    Class for storing processed data of one hand.
+    Data are stored as lists of local locations and rotations for each joint.
+    """
+    frame_numbers: List[float]
+    local_locations: List[Optional[List[Vector]]]
+    local_rotations: List[Optional[List[Quaternion]]]
 
 
 def get_ws_pos(hand_data: PreprocessedHandData, frame_idx: int) -> List[Vector]:
