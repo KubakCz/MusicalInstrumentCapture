@@ -122,3 +122,22 @@ class HandAlignData(bpy.types.PropertyGroup):
         name="Constant joint distance",  # noqa
         description="If enabled, hand joints will have constant distance throughout the animation. This distance is calculated as the average distance from the whole animation.",  # noqa
         default=True)
+
+    target_aramture: bpy.props.PointerProperty(
+        type=bpy.types.Object,
+        name="Target Armature",  # noqa
+        description="Armature to which the hands will be attached.",  # noqa
+        poll=lambda self, obj: obj.type == 'ARMATURE')
+
+    left_hand_target: bpy.props.StringProperty(
+        name="Left Hand Target Bone",  # noqa
+        description="Bone to which the left hand will be aligned.")  # noqa
+
+    right_hand_target: bpy.props.StringProperty(
+        name="Right Hand Target Bone",  # noqa
+        description="Bone to which the right hand will be aligned.")  # noqa
+
+    # right_hand_bone: bpy.props.PointerProperty(
+    #     name="Right Target Bone",  # noqa
+    #     description="Bone to which the right hand will be aligned.",  # noqa
+    #     type=bpy.types.Bone)

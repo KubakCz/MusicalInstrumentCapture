@@ -18,7 +18,8 @@
 
 from typing import List, Optional, Tuple
 import bpy
-from mathutils import Vector, Matrix, Quaternion
+from mathutils import Vector, Matrix, Quaternion, Euler
+import math
 
 from .fcurves import JointFCurves
 from .hand_joint import HandJoint
@@ -239,7 +240,7 @@ def process_wrist_frame(
         palm_dir = to_index.cross(to_ring).normalized()
 
     # x-axis is the direction perpendicular to the palm direction and y-axis
-    x_axis = palm_dir.cross(y_axis).normalized()
+    x_axis = y_axis.cross(palm_dir).normalized()
     # z-axis is palm direction adjusted to be perpendicular to x and y axes
     z_axis = x_axis.cross(y_axis).normalized()
 
@@ -454,6 +455,38 @@ def generate_hand(hand_data: PreprocessedHandData, use_avg_distance: bool, locat
     return hand_armature
 
 
+def align_hand(hand: bpy.types.Object, handedness: str):
+    """Aligns the hand armature to the given handedness."""
+    # Set the rotation and position of the hand armature
+    hand_align_data = bpy.context.scene.hand_align_data
+    if hand_align_data.target_aramture is None:
+        return
+    elif hand_align_data.left_hand_target is None and handedness == 'LEFT':
+        return
+    elif hand_align_data.right_hand_target is None and handedness == 'RIGHT':
+        return
+
+    # if handedness == 'LEFT':
+    #     hand.rotation_euler = Euler((0, math.pi / 2, 0))
+    # else:
+    hand.rotation_euler = Euler((0, -math.pi / 2, 0))
+    hand.location = (Vector((0, 0, 0)))
+
+    # Add child_of constraint
+    for constraint in hand.constraints:
+        if constraint.type == 'CHILD_OF':
+            hand.constraints.remove(constraint)
+
+    child_of_constraint = hand.constraints.new(type='CHILD_OF')
+    child_of_constraint.target = hand_align_data.target_aramture
+    bone_name = hand_align_data.left_hand_target if handedness == 'LEFT' else hand_align_data.right_hand_target
+    child_of_constraint.subtarget = bone_name
+    child_of_constraint.use_scale_x = False
+    child_of_constraint.use_scale_y = False
+    child_of_constraint.use_scale_z = False
+    child_of_constraint.set_inverse_pending = False
+
+
 class MIC_OT_GenerateArmature(bpy.types.Operator):
     """Operator for generating an armature from the hand data."""
     bl_idname = "mic.generate_armature"
@@ -470,7 +503,10 @@ class MIC_OT_GenerateArmature(bpy.types.Operator):
         i = 0
         for preprocessed_hand_data in preprocessed_data:
             print(f"Generating hand {preprocessed_hand_data.name}...")
-            generate_hand(preprocessed_hand_data, context.scene.hand_align_data.use_average_joint_distance, (i/4, 0, 0))
+            hand = generate_hand(preprocessed_hand_data,
+                                 context.scene.hand_align_data.use_average_joint_distance,
+                                 (i/4, 0, 0))
+            align_hand(hand, preprocessed_hand_data.handedness)
             i += 1
 
         bpy.ops.object.select_all(action='DESELECT')

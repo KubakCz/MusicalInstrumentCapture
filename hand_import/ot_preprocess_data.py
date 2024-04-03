@@ -123,7 +123,7 @@ def preprocess(hand_data: HandAnimationData) -> PreprocessedHandData:
     # Return the preprocessed hand data
     preprocessed_hand_data = PreprocessedHandData(
         hand_data.name,
-        'LEFT',  # TODO: handedness
+        'LEFT' if hand_data.name == 'Left' else 'RIGHT',  # temporary solution
         list(map(lambda frame: frame.timestamp, hand_data.animation_data)),
         anim_data,
         avg_dists)

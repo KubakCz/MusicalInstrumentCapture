@@ -39,8 +39,8 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
         layout.label(text="No data loaded." if RawData.raw_data is None else f"Loaded data: {RawData.filename}")
         layout.operator(MIC_OT_LoadData.bl_idname)
 
-        if RawData.raw_data is None:
-            return
+        # if RawData.raw_data is None:
+        #     return
 
         layout.separator()
         layout.prop(hand_align_data, "palm_size")
@@ -50,10 +50,14 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
         layout.label(text="Preprocessed data: None" if PreprocessedData.hands is None else "Preprocessed data: Ready")
         layout.operator(MIC_OT_PreprocessData.bl_idname)
 
-        if PreprocessedData.hands is None:
-            return
+        # if PreprocessedData.hands is None:
+        #     return
 
         layout.separator()
+        layout.prop_search(hand_align_data, "target_aramture", bpy.data, "armatures", icon='ARMATURE_DATA')
+        if hand_align_data.target_aramture is not None:
+            layout.prop_search(hand_align_data, "left_hand_target", hand_align_data.target_aramture.pose, "bones")
+            layout.prop_search(hand_align_data, "right_hand_target", hand_align_data.target_aramture.pose, "bones")
         layout.prop(hand_align_data, "use_average_joint_distance")
         layout.operator(MIC_OT_GenerateArmature.bl_idname)
         layout.operator(MIC_OT_GenerateEmpty.bl_idname)
