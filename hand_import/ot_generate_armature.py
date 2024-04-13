@@ -18,8 +18,7 @@
 
 from typing import List, Optional, Tuple
 import bpy
-from mathutils import Vector, Matrix, Quaternion, Euler
-import math
+from mathutils import Vector, Matrix, Quaternion
 
 from .fcurves import JointFCurves
 from .hand_joint import HandJoint
@@ -28,10 +27,55 @@ from .import_hands_data import PreprocessedHandData, ProcessedHandData
 from .ot_preprocess_data import PreprocessedData
 
 
-def spawn_hand_armature(hand_data: PreprocessedHandData, location: Vector) -> bpy.types.Object:
+def add_hand_to_armature(
+        hand_data: PreprocessedHandData,
+        armature: bpy.types.Object,
+        target_bone: str):
+    """Adds a hand armature after the given bone of the target armature."""
+    # Enter edit mode to add bones
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.mode_set(mode='EDIT')
+    edit_bones = armature.data.edit_bones
+
+    hand_bone = edit_bones.get(target_bone)
+    if hand_bone is None:
+        raise ValueError(f"Bone '{target_bone}' not found in armature '{armature.name}'.")
+
+    bone_list_names = []
+
+    for joint in HandJoint:
+        if joint == HandJoint.WRIST:
+            continue
+
+        # Create a new bone for each joint
+        bone = edit_bones.new(hand_data.name + "_" + str(joint))
+        bone.head = (0, 0, 0)
+        if (joint == HandJoint.WRIST):
+            bone.tail = (0, bpy.context.scene.hand_align_data.palm_size, 0)
+        elif (joint.is_tip()):
+            bone.tail = (0, 0.01, 0)
+        else:
+            bone.tail = (0, hand_data.average_joint_distance[joint.successors()[0].value], 0)
+
+        # Assign the parent to the bone
+        parent = joint.predecessor()
+        if parent is HandJoint.WRIST:
+            bone.parent = hand_bone
+        else:
+            bone.parent = edit_bones[hand_data.name + "_" + str(parent)]
+
+        bone_list_names.append(bone.name)
+
+    # Return to object mode
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    return list(map(lambda name: armature.pose.bones[name], bone_list_names))
+
+
+def spawn_hand_armature(hand_data: PreprocessedHandData) -> bpy.types.Object:
     """Spawns an armature representing the hand joints."""
     # Create a new armature object
-    bpy.ops.object.armature_add(location=location)
+    bpy.ops.object.armature_add()
     armature = bpy.context.object
     armature.name = hand_data.name
 
@@ -65,20 +109,35 @@ def spawn_hand_armature(hand_data: PreprocessedHandData, location: Vector) -> bp
     return armature
 
 
-def create_animation_data(hand_name: str, armature: bpy.types.Object) -> List[JointFCurves]:
+def create_animation_data(
+        hand_name: str,
+        armature: bpy.types.Object,
+        bone_list: Optional[List[bpy.types.PoseBone]]) -> List[JointFCurves]:
     """
     Creates empty animation data for the given armature
     and returns location and rotation fcurves for each bone.
     """
     fcurves: List[JointFCurves] = []
 
-    # Create one action for the whole armature
-    action = bpy.data.actions.new(name=hand_name)
-    armature.animation_data_create()
-    armature.animation_data.action = action
+    if bone_list is None:
+        bone_list = armature.pose.bones
+    else:
+        bone_list.insert(0, None)  # Temp solution to match the index with the HandJoint enum
+
+    # Create or get action
+    if armature.animation_data is None:
+        armature.animation_data_create()
+    if armature.animation_data.action is not None:
+        action = armature.animation_data.action
+    else:
+        action = bpy.data.actions.new(name=hand_name)
+        armature.animation_data.action = action
 
     # Create fcurves for each bone
-    for bone in armature.pose.bones:
+    for bone in bone_list:
+        if bone is None:
+            fcurves.append(None)
+            continue
         bone.rotation_mode = 'QUATERNION'
         fcurves.append(
             JointFCurves(action, f'pose.bones["{bone.name}"]', bone.name)
@@ -96,14 +155,14 @@ def get_hand_rotation_matrix(data: HandFrame, handedness) -> Matrix:
     y_axis = to_middle.normalized()  # y-axis is the direction from the wrist to the middle finger
 
     if handedness == 'LEFT':
-        palm_dir = to_ring.cross(to_index).normalized()
+        up_dir = to_index.cross(to_ring).normalized()
     else:
-        palm_dir = to_index.cross(to_ring).normalized()
+        up_dir = to_ring.cross(to_index).normalized()
 
-    # x-axis is the direction perpendicular to the palm direction and y-axis
-    x_axis = palm_dir.cross(y_axis).normalized()
-    # z-axis is palm direction adjusted to be perpendicular to x and y axes
-    z_axis = x_axis.cross(y_axis).normalized()
+    # z-axis is the direction perpendicular to the up direction and y-axis
+    z_axis = y_axis.cross(up_dir).normalized()
+    # x-axis is up direction adjusted to be perpendicular to z and y axes
+    x_axis = z_axis.cross(y_axis).normalized()
 
     mat = Matrix((x_axis, y_axis, z_axis)).transposed()
     return mat
@@ -239,10 +298,10 @@ def process_wrist_frame(
     else:
         palm_dir = to_index.cross(to_ring).normalized()
 
-    # x-axis is the direction perpendicular to the palm direction and y-axis
-    x_axis = y_axis.cross(palm_dir).normalized()
-    # z-axis is palm direction adjusted to be perpendicular to x and y axes
-    z_axis = x_axis.cross(y_axis).normalized()
+    # z-axis is the direction perpendicular to the palm direction and y-axis
+    z_axis = y_axis.cross(palm_dir).normalized()
+    # x-axis is -palm direction adjusted to be perpendicular to z and y axes
+    x_axis = y_axis.cross(z_axis).normalized()
 
     return Matrix((x_axis, y_axis, z_axis))
 
@@ -282,14 +341,14 @@ def process_1_joint_frame(
 
     # Glob rotation
     to_succ = succ_loc - joint_loc
-    wrist_z_ws = wrist_irot[2]  # palm direction
-    y_axis_ws = to_succ.normalized()                      # joint -> successor
-    x_axis_ws = y_axis_ws.cross(wrist_z_ws).normalized()  # perpendicular to y-axis and palm direction
+    up_dir_ws = wrist_irot[0]
+    y_axis_ws = to_succ.normalized()                       # joint -> successor
+    x_axis_ws = y_axis_ws.cross(up_dir_ws).normalized()  # perpendicular to y-axis and up direction
     z_axis_ws = x_axis_ws.cross(y_axis_ws).normalized()
-    ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))   # rot from local to world space
+    ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))    # rot from local to world space
 
     # Loc rotation
-    ws_rot = ws_irot.transposed()                         # rot from world to local space
+    ws_rot = ws_irot.transposed()                          # rot from world to local space
     loc_rot = (wrist_irot @ ws_rot).to_quaternion()
 
     return loc_loc, loc_rot, ws_irot
@@ -439,6 +498,9 @@ def get_local_anim_data(hand_data: PreprocessedHandData, use_avg_distance: bool)
 def aply_local_anim_data(fcurves: List[JointFCurves], anim_data: ProcessedHandData):
     """Applies the local animation data to the fcurves."""
     for joint in HandJoint:
+        if fcurves[joint.value] is None:
+            continue
+
         fcurves[joint.value].set_keyframes(
             anim_data.frame_numbers,
             anim_data.local_locations[joint.value],
@@ -446,13 +508,21 @@ def aply_local_anim_data(fcurves: List[JointFCurves], anim_data: ProcessedHandDa
         )
 
 
-def generate_hand(hand_data: PreprocessedHandData, use_avg_distance: bool, location: Vector) -> bpy.types.Object:
+def generate_hand(
+        hand_data: PreprocessedHandData,
+        use_avg_distance: bool,
+        armature: Optional[bpy.types.Object],
+        bone: Optional[str]) -> bpy.types.Object:
     """Generates an animated hand armature based on the given hand data."""
-    hand_armature = spawn_hand_armature(hand_data, location)
-    fcurves = create_animation_data(hand_data.name, hand_armature)
+    if armature is None or bone is None:
+        armature = spawn_hand_armature(hand_data)
+        bone_list = None
+    else:
+        bone_list = add_hand_to_armature(hand_data, armature, bone)
+    fcurves = create_animation_data(hand_data.name, armature, bone_list)
     anim_data = get_local_anim_data(hand_data, use_avg_distance)
     aply_local_anim_data(fcurves, anim_data)
-    return hand_armature
+    return armature
 
 
 def align_hand(hand: bpy.types.Object, handedness: str):
@@ -466,10 +536,6 @@ def align_hand(hand: bpy.types.Object, handedness: str):
     elif hand_align_data.right_hand_target is None and handedness == 'RIGHT':
         return
 
-    # if handedness == 'LEFT':
-    #     hand.rotation_euler = Euler((0, math.pi / 2, 0))
-    # else:
-    hand.rotation_euler = Euler((0, -math.pi / 2, 0))
     hand.location = (Vector((0, 0, 0)))
 
     # Add child_of constraint
@@ -500,14 +566,19 @@ class MIC_OT_GenerateArmature(bpy.types.Operator):
             return {'CANCELLED'}
 
         preprocessed_data = PreprocessedData.hands
-        i = 0
         for preprocessed_hand_data in preprocessed_data:
             print(f"Generating hand {preprocessed_hand_data.name}...")
+            target_armature = bpy.context.scene.hand_align_data.target_aramture
+            if preprocessed_hand_data.handedness == 'LEFT':
+                target_bone = bpy.context.scene.hand_align_data.left_hand_target
+            else:
+                target_bone = bpy.context.scene.hand_align_data.right_hand_target
+
             hand = generate_hand(preprocessed_hand_data,
                                  context.scene.hand_align_data.use_average_joint_distance,
-                                 (i/4, 0, 0))
-            align_hand(hand, preprocessed_hand_data.handedness)
-            i += 1
+                                 target_armature, target_bone)
+            if target_armature is None:
+                align_hand(hand, preprocessed_hand_data.handedness)
 
         bpy.ops.object.select_all(action='DESELECT')
 

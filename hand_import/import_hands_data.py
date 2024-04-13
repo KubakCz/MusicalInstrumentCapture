@@ -136,8 +136,3 @@ class HandAlignData(bpy.types.PropertyGroup):
     right_hand_target: bpy.props.StringProperty(
         name="Right Hand Target Bone",  # noqa
         description="Bone to which the right hand will be aligned.")  # noqa
-
-    # right_hand_bone: bpy.props.PointerProperty(
-    #     name="Right Target Bone",  # noqa
-    #     description="Bone to which the right hand will be aligned.",  # noqa
-    #     type=bpy.types.Bone)
