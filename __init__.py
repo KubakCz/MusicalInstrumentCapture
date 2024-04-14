@@ -37,7 +37,7 @@ class DEPENDENCY_PT_Warning(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
 
-    def draw(self, context):
+    def draw(self, context: bpy.types.Context) -> None:
         layout = self.layout
 
         layout.label(text=f"Please install the missing dependencies for the \"{bl_info.get('name')}\" add-on.")
@@ -47,11 +47,14 @@ class DEPENDENCY_PT_Warning(bpy.types.Panel):
 dependencies_installed = False
 
 
-def register():
+def register() -> None:
     """Try to register the classes, or register the warning panel if the dependencies are not installed."""
     try:
         from .hand_import import pt_import_hands
         bpy.utils.register_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
+
+        from .hand_import import ot_import_hand
+        bpy.utils.register_class(ot_import_hand.MIC_OT_ImportHands)
 
         from .hand_import import ot_load_data
         bpy.utils.register_class(ot_load_data.MIC_OT_LoadData)
