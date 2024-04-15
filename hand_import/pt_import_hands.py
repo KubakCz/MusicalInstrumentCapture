@@ -18,6 +18,8 @@
 
 import bpy
 
+
+from .ot_import_hand import MIC_OT_ImportHands
 from .ot_generate_empty import MIC_OT_GenerateEmpty
 from .ot_generate_armature import MIC_OT_GenerateArmature
 from .ot_preprocess_data import MIC_OT_PreprocessData, PreprocessedData
@@ -32,9 +34,12 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_category = "Musical Instrument Capture"
 
-    def draw(self, context):
+    def draw(self, context: bpy.types.Context) -> None:
         layout = self.layout
         hand_align_data = context.scene.hand_align_data
+
+        layout.operator(MIC_OT_ImportHands.bl_idname)
+        layout.separator()
 
         layout.label(text="No data loaded." if RawData.raw_data is None else f"Loaded data: {RawData.filename}")
         layout.operator(MIC_OT_LoadData.bl_idname)
