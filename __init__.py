@@ -48,13 +48,20 @@ dependencies_installed = False
 
 
 def register() -> None:
-    """Try to register the classes, or register the warning panel if the dependencies are not installed."""
+    """
+    Try to register the classes, 
+    or register the warning panel if the dependencies are not installed.
+    """
     try:
         from .hand_import import pt_import_hands
         bpy.utils.register_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
 
         from .hand_import import ot_import_hand
         bpy.utils.register_class(ot_import_hand.MIC_OT_ImportHands)
+
+        from .hand_import import property_groups
+        bpy.utils.register_class(property_groups.PreprocessProps)
+        bpy.types.Scene.preprocess_props = bpy.props.PointerProperty(type=property_groups.PreprocessProps)
 
         from .hand_import import ot_load_data
         bpy.utils.register_class(ot_load_data.MIC_OT_LoadData)
@@ -95,8 +102,11 @@ def register() -> None:
         return
 
 
-def unregister():
-    """Unregister the classes, or the warning panel if the dependencies are not installed."""
+def unregister() -> None:
+    """
+    Unregister the classes,
+    or the warning panel if the dependencies are not installed.
+    """
     from .hand_import import pt_import_hands
     if pt_import_hands.MIC_PT_MusicalInstrumentCapture.is_registered:
         bpy.utils.unregister_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
@@ -104,6 +114,11 @@ def unregister():
     from .hand_import import ot_load_data
     if ot_load_data.MIC_OT_LoadData.is_registered:
         bpy.utils.unregister_class(ot_load_data.MIC_OT_LoadData)
+
+    from .hand_import import property_groups
+    if property_groups.PreprocessProps.is_registered:
+        bpy.utils.unregister_class(property_groups.PreprocessProps)
+        del bpy.types.Scene.preprocess_props
 
     from .hand_import import ot_preprocess_data
     if ot_preprocess_data.MIC_OT_PreprocessData.is_registered:

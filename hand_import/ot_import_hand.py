@@ -17,8 +17,12 @@
 """Operator for Importing hands."""
 
 import bpy
+from typing import Optional
 
+
+from .property_groups import PreprocessProps
 from .hand_loading import InvalidDataError, load_json
+from .hand_preprocessing import preprocess_data
 
 
 class MIC_OT_ImportHands(bpy.types.Operator):
@@ -27,7 +31,7 @@ class MIC_OT_ImportHands(bpy.types.Operator):
     bl_label = "Import Hands"
     bl_options = {'REGISTER'}
 
-    filepath: bpy.props.StringProperty(subtype="FILE_PATH")  # noqa
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")  # type: ignore # noqa
 
     def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[str]:
         context.window_manager.fileselect_add(self)
@@ -37,14 +41,21 @@ class MIC_OT_ImportHands(bpy.types.Operator):
         print("--- Executing ImportHands ---")
         print("Loading data from file:", self.filepath)
         try:
-            load_json(self.filepath)
+            hands = load_json(self.filepath)
         except InvalidDataError as e:
             messages = []
-            while e:
-                messages.append(str(e))
-                e = e.__cause__
+            exception: Optional[BaseException] = e
+            while exception:
+                messages.append(str(exception))
+                exception = exception.__cause__
             self.report({'ERROR'}, '\nCaused by:\n'.join(messages))
             return {'CANCELLED'}
+
+        print("Preprocessing data...")
+
+        preprocess_props = context.scene.preprocess_props
+        assert isinstance(preprocess_props, PreprocessProps)
+        preprocessed_hands = preprocess_data(hands, preprocess_props)
 
         print("--- ImportHands finished ---")
 

@@ -55,6 +55,9 @@ class PositionList:
     def __getitem__(self, item: int) -> Vector:
         return self.vector_list[item]
 
+    def __setitem__(self, index: int, value: Vector) -> None:
+        self.vector_list[index] = value
+
     @staticmethod
     def from_data(data: List[Dict[str, float]]) -> 'PositionList':
         """
@@ -140,9 +143,9 @@ class Hand:
     def __init__(self, name: str, hand_type: HandType, frames: List[Frame]):
         """
         Initialize the Hand with the given data.
-        :param name: The name of the hand.
-        :param handedness: The handedness of the hand.
-        :param animation: The animation data of the hand.
+        :param name: Name of the hand.
+        :param handedness: Handedness of the hand.
+        :param frames: List of frames containing the animation data.
         """
         self.name = name
         self.hand_type = hand_type
