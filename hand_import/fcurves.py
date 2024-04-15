@@ -19,12 +19,14 @@ Custom FCurve classes for easier manipulation
 with location and rotation keyframes.
 """
 
-from typing import List
+from typing import Any, Iterable, List
 import bpy
 from mathutils import Vector, Quaternion
 
+from .hand_loading import Hand
 
-def flat_zip(a, b):
+
+def flat_zip(a: Iterable[Any], b: Iterable[Any]) -> List[Any]:
     """
     Zip two iterables and flatten the result.
     Example: flat_zip([1, 2, 3], [4, 5, 6]) -> [1, 4, 2, 5, 3, 6]
@@ -56,20 +58,46 @@ class LocationFCurves:
         for curve in self:
             curve.color_mode = 'AUTO_RGB'
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[bpy.types.FCurve]:
         return iter((self.x, self.y, self.z))
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> bpy.types.FCurve:
         return (self.x, self.y, self.z)[key]
 
-    def __setitem__(self, key, value):
-        (self.x, self.y, self.z)[key] = value
+    def __setitem__(self, key: int, value: bpy.types.FCurve) -> None:
+        if key == 0:
+            self.x = value
+        elif key == 1:
+            self.y = value
+        elif key == 2:
+            self.z = value
+        else:
+            raise IndexError("Invalid index for LocationFCurves: " + str(key))
 
-    def set_keyframes(self, timestamps: List[float], locations: List[Vector]):
+    def get_keyframes(self) -> List[Vector]:
         """
-        Set keyframes for the rotation of the joint.
-        timestamps: List of timestamps of the keyframes.
-        rotations: List rotations of the joint.
+        Get the keyframes from the fcurves.
+        :return: List of keyframes.
+        """
+        # [key_0.x, key_0.y, key_1.x, key_1.y, ...] for each axis
+        keyframe_points = [[0] * 2 * len(self.x.keyframe_points) for _ in range(3)]
+        self.x.keyframe_points.foreach_get("co", keyframe_points[0])
+        self.y.keyframe_points.foreach_get("co", keyframe_points[1])
+        self.z.keyframe_points.foreach_get("co", keyframe_points[2])
+
+        return [
+            Vector((
+                keyframe_points[0][i * 2 + 1],
+                keyframe_points[1][i * 2 + 1],
+                keyframe_points[2][i * 2 + 1]
+            )) for i in range(len(self.x.keyframe_points))
+        ]
+
+    def set_keyframes(self, timestamps: List[float], locations: List[Vector]) -> None:
+        """
+        Set keyframes for the locations of the joint.
+        timestamps: List of timestamps of the keyframes. Timestamps are in "frame" units.
+        locations: List locations of the joint.
         """
         if locations is None:
             return
@@ -115,19 +143,28 @@ class RotationFCurves:
         for curve in self:
             curve.color_mode = 'AUTO_YRGB'
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[bpy.types.FCurve]:
         return iter((self.w, self.x, self.y, self.z))
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> bpy.types.FCurve:
         return (self.w, self.x, self.y, self.z)[key]
 
-    def __setitem__(self, key, value):
-        (self.w, self.x, self.y, self.z)[key] = value
+    def __setitem__(self, key: int, value: bpy.types.FCurve) -> None:
+        if key == 0:
+            self.w = value
+        elif key == 1:
+            self.x = value
+        elif key == 2:
+            self.y = value
+        elif key == 3:
+            self.z = value
+        else:
+            raise IndexError("Invalid index for LocationFCurves: " + str(key))
 
-    def set_keyframes(self, timestamps: List[float], rotations: List[Quaternion]):
+    def set_keyframes(self, timestamps: List[float], rotations: List[Quaternion]) -> None:
         """
         Set keyframes for the rotation of the joint.
-        timestamps: List of timestamps of the keyframes.
+        timestamps: List of timestamps of the keyframes. Timestamps are in "frame" units.
         rotations: List rotations of the joint.
         """
         if rotations is None:
@@ -158,12 +195,16 @@ class JointFCurves:
         self.location = LocationFCurves(action, data_path + ".location", action_group)
         self.rotation = RotationFCurves(action, data_path + ".rotation_quaternion", action_group)
 
-    def set_keyframes(self, timestamps: List[float], locations: List[Vector], rotations: List[Quaternion]):
+    def set_keyframes(self, timestamps: List[float], locations: List[Vector], rotations: List[Quaternion]) -> None:
         """
         Set keyframes for the location and rotation of the joint.
-        timestamps: List of timestamps of the keyframes.
+        timestamps: List of timestamps of the keyframes. Timestamps are in "frame" units.
         locations: List locations of the joint.
         rotations: List rotations of the joint.
         """
         self.location.set_keyframes(timestamps, locations)
         self.rotation.set_keyframes(timestamps, rotations)
+
+
+def create_fcurves_from_hand(hand: Hand, action: bpy.types.Action) -> List[JointFCurves]:
+    return []

@@ -21,7 +21,10 @@ from typing import List, Optional
 
 
 class HandJoint(Enum):
-    """Enum representing the joints of the hand. This can be used to index the hand pose data."""
+    """
+    Enum representing the joints of the hand.
+    Used to index the hand pose data.
+    """
     WRIST = 0
     THUMB_1 = 1
     THUMB_2 = 2
@@ -45,36 +48,53 @@ class HandJoint(Enum):
     PINKY_TIP = 20
 
     def predecessor(self) -> Optional['HandJoint']:
-        """Returns the predecessor of this joint, or None."""
+        """
+        Returns the predecessor of this joint.
+        The predecessor of the wrist is None.
+        """
         if self.value == 0:
             return None
-        return HandJoint._predecessors[self.value]
+        return _predecessors[self.value]
 
     def successors(self) -> List['HandJoint']:
-        """Returns all successors of this joint."""
-        return HandJoint._successors[self.value]
+        """
+        Returns all successors of this joint.
+        The successors of the tip joints are an empty list.
+        """
+        return _successors[self.value]
 
     def is_tip(self) -> bool:
-        """Returns whether this joint is a tip joint."""
-        return self in HandJoint._tip_joints
+        """
+        Returns whether this joint is a tip joint.
+        """
+        return self in _tip_joints
 
+    @staticmethod
     def get_first_finger_joints() -> List['HandJoint']:
-        """List of first phalanx joints of each finger."""
-        return HandJoint._first_finger_joints
+        """
+        List of first phalanx joints of each finger.
+        """
+        return _first_finger_joints
 
+    @staticmethod
     def get_second_and_third_finger_joints() -> List['HandJoint']:
-        """List of second and third phalanx joints of each finger."""
-        return HandJoint._second_and_third_finger_joints
+        """
+        List of second and third phalanx joints of each finger.
+        """
+        return _second_and_third_finger_joints
 
+    @staticmethod
     def get_tips() -> List['HandJoint']:
-        """List of tip joints of each finger."""
-        return HandJoint._tip_joints
+        """
+        List of tip joints of each finger.
+        """
+        return _tip_joints
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name.replace('_', ' ').title()
 
 
-HandJoint._predecessors = [
+_predecessors = [
     None,                # WRIST
     HandJoint.WRIST,     # THUMB1
     HandJoint.THUMB_1,   # THUMB2
@@ -98,7 +118,7 @@ HandJoint._predecessors = [
     HandJoint.PINKY_3,   # PINKY_TIP
 ]
 
-HandJoint._successors = [
+_successors: List[List[HandJoint]] = [
     [HandJoint.THUMB_1, HandJoint.INDEX_1, HandJoint.MIDDLE_1, HandJoint.RING_1, HandJoint.PINKY_1],  # WRIST
     [HandJoint.THUMB_2],     # THUMB1
     [HandJoint.THUMB_3],     # THUMB2
@@ -122,7 +142,7 @@ HandJoint._successors = [
     []                       # PINKY_TIP
 ]
 
-HandJoint._first_finger_joints = [
+_first_finger_joints = [
     HandJoint.THUMB_1,
     HandJoint.INDEX_1,
     HandJoint.MIDDLE_1,
@@ -130,7 +150,7 @@ HandJoint._first_finger_joints = [
     HandJoint.PINKY_1
 ]
 
-HandJoint._second_and_third_finger_joints = [
+_second_and_third_finger_joints = [
     HandJoint.THUMB_2,
     HandJoint.THUMB_3,
     HandJoint.INDEX_2,
@@ -143,7 +163,7 @@ HandJoint._second_and_third_finger_joints = [
     HandJoint.PINKY_3
 ]
 
-HandJoint._tip_joints = [
+_tip_joints = [
     HandJoint.THUMB_TIP,
     HandJoint.INDEX_TIP,
     HandJoint.MIDDLE_TIP,
