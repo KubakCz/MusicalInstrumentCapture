@@ -36,12 +36,17 @@ def add_hand_to_armature(
     bpy.context.view_layer.objects.active = armature
     bpy.ops.object.mode_set(mode='EDIT')
     edit_bones = armature.data.edit_bones
+    assert isinstance(edit_bones, bpy.types.bpy_prop_collection)
 
     hand_bone = edit_bones.get(target_bone)
+    assert isinstance(hand_bone, bpy.types.EditBone)
     if hand_bone is None:
         raise ValueError(f"Bone '{target_bone}' not found in armature '{armature.name}'.")
+    hand_bone.length = bpy.context.scene.hand_align_data.palm_size
 
     bone_list_names = []
+
+    tail_offset_multiplier = 1.0 if hand_data.handedness == 'LEFT' else -1.0
 
     for joint in HandJoint:
         if joint == HandJoint.WRIST:
@@ -49,23 +54,23 @@ def add_hand_to_armature(
 
         # Create a new bone for each joint
         bone = edit_bones.new(hand_data.name + "_" + str(joint))
-        bone.head = (0, 0, 0)
-        if (joint == HandJoint.WRIST):
-            bone.tail = (0, bpy.context.scene.hand_align_data.palm_size, 0)
-        elif (joint.is_tip()):
-            bone.tail = (0, 0.01, 0)
-        else:
-            bone.tail = (0, hand_data.average_joint_distance[joint.successors()[0].value], 0)
 
         # Assign the parent to the bone
-        parent = joint.predecessor()
-        if parent is HandJoint.WRIST:
+        parent_joint = joint.predecessor()
+        if parent_joint is HandJoint.WRIST:
             bone.parent = hand_bone
         else:
-            bone.parent = edit_bones[hand_data.name + "_" + str(parent)]
+            bone.parent = edit_bones[hand_data.name + "_" + str(parent_joint)]
+
+        bone.head = bone.parent.head + Vector((0, 0, 0))
+        bone.tail = bone.head
+        if (joint.is_tip()):
+            bone.tail += Vector((tail_offset_multiplier * 0.01, 0, 0))
+        else:
+            bone.tail += Vector((tail_offset_multiplier *
+                                hand_data.average_joint_distance[joint.successors()[0].value], 0, 0))
 
         bone_list_names.append(bone.name)
-
     # Return to object mode
     bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -294,9 +299,9 @@ def process_wrist_frame(
     y_axis = to_middle.normalized()
 
     if is_left:
-        palm_dir = to_ring.cross(to_index).normalized()
-    else:
         palm_dir = to_index.cross(to_ring).normalized()
+    else:
+        palm_dir = to_ring.cross(to_index).normalized()
 
     # z-axis is the direction perpendicular to the palm direction and y-axis
     z_axis = y_axis.cross(palm_dir).normalized()
