@@ -19,7 +19,7 @@
 import bpy
 
 from .property_groups import PreprocessProps
-from .ot_import_hand import MIC_OT_ImportHands
+from .ot_import_hands import MIC_OT_ImportHands
 
 from .ot_generate_empty import MIC_OT_GenerateEmpty
 from .ot_generate_armature import MIC_OT_GenerateArmature
