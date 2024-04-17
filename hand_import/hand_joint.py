@@ -54,47 +54,26 @@ class HandJoint(Enum):
         """
         if self.value == 0:
             return None
-        return _predecessors[self.value]
+        return predecessors[self.value]
 
     def successors(self) -> List['HandJoint']:
         """
         Returns all successors of this joint.
         The successors of the tip joints are an empty list.
         """
-        return _successors[self.value]
+        return successors[self.value]
 
     def is_tip(self) -> bool:
         """
         Returns whether this joint is a tip joint.
         """
-        return self in _tip_joints
-
-    @staticmethod
-    def get_first_finger_joints() -> List['HandJoint']:
-        """
-        List of first phalanx joints of each finger.
-        """
-        return _first_finger_joints
-
-    @staticmethod
-    def get_second_and_third_finger_joints() -> List['HandJoint']:
-        """
-        List of second and third phalanx joints of each finger.
-        """
-        return _second_and_third_finger_joints
-
-    @staticmethod
-    def get_tips() -> List['HandJoint']:
-        """
-        List of tip joints of each finger.
-        """
-        return _tip_joints
+        return self in tip_joints
 
     def __str__(self) -> str:
         return self.name.replace('_', ' ').title()
 
 
-_predecessors = [
+predecessors = [
     None,                # WRIST
     HandJoint.WRIST,     # THUMB1
     HandJoint.THUMB_1,   # THUMB2
@@ -118,7 +97,7 @@ _predecessors = [
     HandJoint.PINKY_3,   # PINKY_TIP
 ]
 
-_successors: List[List[HandJoint]] = [
+successors: List[List[HandJoint]] = [
     [HandJoint.THUMB_1, HandJoint.INDEX_1, HandJoint.MIDDLE_1, HandJoint.RING_1, HandJoint.PINKY_1],  # WRIST
     [HandJoint.THUMB_2],     # THUMB1
     [HandJoint.THUMB_3],     # THUMB2
@@ -142,7 +121,7 @@ _successors: List[List[HandJoint]] = [
     []                       # PINKY_TIP
 ]
 
-_first_finger_joints = [
+first_finger_joints = [
     HandJoint.THUMB_1,
     HandJoint.INDEX_1,
     HandJoint.MIDDLE_1,
@@ -150,7 +129,7 @@ _first_finger_joints = [
     HandJoint.PINKY_1
 ]
 
-_second_and_third_finger_joints = [
+second_and_third_finger_joints = [
     HandJoint.THUMB_2,
     HandJoint.THUMB_3,
     HandJoint.INDEX_2,
@@ -163,7 +142,7 @@ _second_and_third_finger_joints = [
     HandJoint.PINKY_3
 ]
 
-_tip_joints = [
+tip_joints = [
     HandJoint.THUMB_TIP,
     HandJoint.INDEX_TIP,
     HandJoint.MIDDLE_TIP,

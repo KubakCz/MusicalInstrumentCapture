@@ -24,6 +24,11 @@ class HandAlignProps(bpy.types.PropertyGroup):
     """
     Property group for storing alignment properties.
     """
+    start_frame: bpy.props.IntProperty(  # type: ignore
+        name="Start Frame",  # noqa
+        description="Frame at which the hand animation should start.",  # noqa
+        default=1)
+
     target_aramture: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Target Armature",  # noqa
@@ -37,6 +42,19 @@ class HandAlignProps(bpy.types.PropertyGroup):
     right_hand_target: bpy.props.StringProperty(  # type: ignore
         name="Right Hand Target Bone",  # noqa
         description="Bone to which the right hand will be aligned.")  # noqa
+
+    def prop_not_set(self) -> str | None:
+        """
+        If any of the properties is not set, return the name of the property.
+        Else return None.
+        """
+        if self.target_aramture is None:
+            return "Target Armature"
+        if not self.left_hand_target:
+            return "Left Hand Target Bone"
+        if not self.right_hand_target:
+            return "Right Hand Target Bone"
+        return None
 
 
 class PreprocessProps(bpy.types.PropertyGroup):

@@ -18,7 +18,7 @@
 
 import bpy
 
-from .property_groups import PreprocessProps
+from .property_groups import HandAlignProps, PreprocessProps
 from .ot_import_hands import MIC_OT_ImportHands
 
 from .ot_generate_empty import MIC_OT_GenerateEmpty
@@ -41,15 +41,26 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
         # Preprocess props
         preprocess_props = context.scene.preprocess_props
         assert isinstance(preprocess_props, PreprocessProps)
+        layout.label(text="Preprocessing settings:")
         layout.prop(preprocess_props, "palm_size")
         layout.prop(preprocess_props, "cutoff_frequency")
         layout.prop(preprocess_props, "filter_order")
         layout.prop(preprocess_props, "samples_per_frame")
 
-        layout.operator(MIC_OT_ImportHands.bl_idname)
+        # Align props
+        hand_align_props = context.scene.hand_align_props
+        assert isinstance(hand_align_props, HandAlignProps)
         layout.separator()
+        layout.label(text="Align hands settings:")
+        layout.prop_search(hand_align_props, "target_aramture", bpy.data, "armatures", icon='ARMATURE_DATA')
+        if hand_align_props.target_aramture is not None:
+            layout.prop_search(hand_align_props, "left_hand_target", hand_align_props.target_aramture.pose, "bones")
+            layout.prop_search(hand_align_props, "right_hand_target", hand_align_props.target_aramture.pose, "bones")
+
+        layout.operator(MIC_OT_ImportHands.bl_idname)
 
         # OLD CODE:
+        layout.separator()
 
         hand_align_data = context.scene.hand_align_data
         layout.label(text="No data loaded." if RawData.raw_data is None else f"Loaded data: {RawData.filename}")
