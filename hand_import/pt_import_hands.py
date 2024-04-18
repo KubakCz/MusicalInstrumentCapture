@@ -49,7 +49,7 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
         assert isinstance(hand_align_props, HandAlignProps)
         layout.separator()
         layout.label(text="Align hands settings:")
-        layout.prop_search(hand_align_props, "target_aramture", bpy.data, "armatures", icon='ARMATURE_DATA')
+        layout.prop_search(hand_align_props, "target_aramture", bpy.data, "objects", icon='ARMATURE_DATA')
         if hand_align_props.target_aramture is not None:
             layout.prop_search(hand_align_props, "left_hand_target", hand_align_props.target_aramture.pose, "bones")
             layout.prop_search(hand_align_props, "right_hand_target", hand_align_props.target_aramture.pose, "bones")
