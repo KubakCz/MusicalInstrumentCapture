@@ -53,5 +53,6 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
         if hand_align_props.target_aramture is not None:
             layout.prop_search(hand_align_props, "left_hand_target", hand_align_props.target_aramture.pose, "bones")
             layout.prop_search(hand_align_props, "right_hand_target", hand_align_props.target_aramture.pose, "bones")
+        layout.prop(hand_align_props, "start_frame")
 
         layout.operator(MIC_OT_ImportHands.bl_idname)
