@@ -1,16 +1,22 @@
 import bpy
 from mathutils import Matrix
-from .align_data import ViolinAlignData
+from .property_groups import ViolinAlignProps
 
 
 class MIC_OT_AlignViolin(bpy.types.Operator):
-    """Aligns the violin according to the given rigidbody and markers."""
+    """
+    Aligns the violin according to the given rigidbody and markers.
+    """
     bl_idname = "mic.align_violin"
     bl_label = "Align Violin"
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'UNDO'}
 
-    def any_none(self, data: ViolinAlignData) -> bool:
-        """Check if any of the violin alignment data is None."""
+    def any_none(self, data: ViolinAlignProps) -> bool:
+        """
+        Check if any of the violin alignment data is None.
+        :param data: Violin alignment data.
+        :return: True if any of the data is None, False otherwise.
+        """
         if data.reference_point is None:
             self.report({'ERROR'}, "Reference point is not set.")
             return True
@@ -35,8 +41,12 @@ class MIC_OT_AlignViolin(bpy.types.Operator):
         return False
 
     def execute(self, context: bpy.types.Context) -> set[str]:
-        print("----------------- Executing Align Violin -----------------")
+        """
+        Aligns the violin according to the given rigidbody and markers.
+        """
+        print("--- Executing Align Violin ---")
         violin_align_data = context.scene.violin_align_data
+        assert isinstance(violin_align_data, ViolinAlignProps)
 
         if self.any_none(violin_align_data):
             return {'CANCELLED'}

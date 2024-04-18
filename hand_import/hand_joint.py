@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Contains the HandJoint enum and methods for working with this enum."""
+"""HandJoint enum for indexing of joints and methods for working with this enum."""
 
 from enum import Enum
 from typing import List, Optional

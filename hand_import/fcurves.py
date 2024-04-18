@@ -14,10 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Custom FCurve classes for easier manipulation
-with location and rotation keyframes.
-"""
+"""Custom FCurve classes for easier manipulation with location and rotation keyframes."""
 
 from typing import Any, Iterable, List
 import bpy

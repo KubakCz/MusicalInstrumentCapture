@@ -17,23 +17,27 @@
 """Panel for alligning Violin and Bow models with the captured data."""
 
 import bpy
+from .property_groups import ViolinAlignProps, BowAlignProps
 from .ot_align_bow import MIC_OT_AlignBow
 from .ot_align_violin import MIC_OT_AlignViolin
 
 
 class MIC_PT_Align(bpy.types.Panel):
-    """Main panel for the Musical Instrument Capture add-on."""
+    """
+    Panel for aligning the violin and the bow with the captured data.
+    """
     bl_label = "Align Violin and Bow"
-    bl_idname = "VIEW3D_PT_Align"
+    bl_idname = "MIC_PT_Align"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Musical Instrument Capture"
 
-    def draw(self, context):
+    def draw(self, context: bpy.types.Context) -> None:
         layout = self.layout
 
         # Violin alignment
         violin_align_data = context.scene.violin_align_data
+        assert isinstance(violin_align_data, ViolinAlignProps)
         layout.label(text="Violin:")
         violin_markers_box = layout.box()
         violin_markers_box.prop_search(violin_align_data, "rigidbody", bpy.data, "objects")
@@ -51,6 +55,7 @@ class MIC_PT_Align(bpy.types.Panel):
 
         # Bow alignment
         bow_align_data = context.scene.bow_align_data
+        assert isinstance(bow_align_data, BowAlignProps)
         layout.label(text="Bow:")
         bow_markers_box = layout.box()
         bow_markers_box.prop_search(bow_align_data, "rigidbody", bpy.data, "objects")

@@ -21,96 +21,48 @@ import bpy
 bl_info = {
     "name": "Musical Instrument Capture",
     "author": "Jakub Slezáček",
-    "description": "",
-    "blender": (2, 91, 0),
-    "version": (0, 0, 1),
-    "location": "",
-    "warning": "Requires installation of dependencies",
-    "category": "Generic"
+    "description": "A tool to make animating violin performances easier.",
+    "blender": (4, 0, 0),
+    "version": (0, 1, 0),
+    "location": "View3D > Sidebar > Musical Instrument Capture",
+    "warning": "",
+    "doc_url": "https://github.com/KubakCz/MusicalInstrumentCapture/blob/main/README.md",
+    "category": "Animation"
 }
 
 
-class DEPENDENCY_PT_Warning(bpy.types.Panel):
-    """Panel that warns the user about missing dependencies."""
-    bl_label = "Musical Instrument Capture"
-    bl_category = "Musical Instrument Capture"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-
-    def draw(self, context: bpy.types.Context) -> None:
-        layout = self.layout
-
-        layout.label(text=f"Please install the missing dependencies for the \"{bl_info.get('name')}\" add-on.")
-        layout.label(text="TODO: Tutorial on how to install the dependencies manually.")
-
-
-dependencies_installed = False
-
-
 def register() -> None:
-    """
-    Try to register the classes, 
-    or register the warning panel if the dependencies are not installed.
-    """
-    try:
-        # Hand import
-        from .hand_import import property_groups
-        bpy.utils.register_class(property_groups.PreprocessProps)
-        bpy.types.Scene.preprocess_props = bpy.props.PointerProperty(type=property_groups.PreprocessProps)
-        bpy.utils.register_class(property_groups.HandAlignProps)
-        bpy.types.Scene.hand_align_props = bpy.props.PointerProperty(type=property_groups.HandAlignProps)
+    # Hand import
+    from .hand_import import property_groups as h_property_groups
+    bpy.utils.register_class(h_property_groups.PreprocessProps)
+    bpy.types.Scene.preprocess_props = bpy.props.PointerProperty(type=h_property_groups.PreprocessProps)
+    bpy.utils.register_class(h_property_groups.HandAlignProps)
+    bpy.types.Scene.hand_align_props = bpy.props.PointerProperty(type=h_property_groups.HandAlignProps)
 
-        from .hand_import import ot_import_hands
-        bpy.utils.register_class(ot_import_hands.MIC_OT_ImportHands)
+    from .hand_import import ot_import_hands
+    bpy.utils.register_class(ot_import_hands.MIC_OT_ImportHands)
 
-        from .hand_import import pt_import_hands
-        bpy.utils.register_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
+    from .hand_import import pt_import_hands
+    bpy.utils.register_class(pt_import_hands.MIC_PT_MusicalInstrumentCapture)
 
-        # OLD
-        from .hand_import import ot_load_data
-        bpy.utils.register_class(ot_load_data.MIC_OT_LoadData)
+    # Rigid body align
+    from .rigidbody_align import property_groups as r_property_groups
+    bpy.utils.register_class(r_property_groups.ViolinAlignProps)
+    bpy.types.Scene.violin_align_data = bpy.props.PointerProperty(type=r_property_groups.ViolinAlignProps)
+    bpy.utils.register_class(r_property_groups.BowAlignProps)
+    bpy.types.Scene.bow_align_data = bpy.props.PointerProperty(type=r_property_groups.BowAlignProps)
 
-        from .hand_import import ot_preprocess_data
-        bpy.utils.register_class(ot_preprocess_data.MIC_OT_PreprocessData)
+    from .rigidbody_align import ot_align_bow
+    bpy.utils.register_class(ot_align_bow.MIC_OT_AlignBow)
 
-        from .hand_import import ot_generate_armature
-        bpy.utils.register_class(ot_generate_armature.MIC_OT_GenerateArmature)
+    from .rigidbody_align import ot_align_violin
+    bpy.utils.register_class(ot_align_violin.MIC_OT_AlignViolin)
 
-        from .hand_import import ot_generate_empty
-        bpy.utils.register_class(ot_generate_empty.MIC_OT_GenerateEmpty)
-
-        from .hand_import import import_hands_data
-        bpy.utils.register_class(import_hands_data.HandAlignData)
-        bpy.types.Scene.hand_align_data = bpy.props.PointerProperty(type=import_hands_data.HandAlignData)
-
-        # Rigid body align
-        from .rigidbody_align import align_data
-        bpy.utils.register_class(align_data.ViolinAlignData)
-        bpy.types.Scene.violin_align_data = bpy.props.PointerProperty(type=align_data.ViolinAlignData)
-        bpy.utils.register_class(align_data.BowAlignData)
-        bpy.types.Scene.bow_align_data = bpy.props.PointerProperty(type=align_data.BowAlignData)
-
-        from .rigidbody_align import ot_align_bow
-        bpy.utils.register_class(ot_align_bow.MIC_OT_AlignBow)
-
-        from .rigidbody_align import ot_align_violin
-        bpy.utils.register_class(ot_align_violin.MIC_OT_AlignViolin)
-
-        from .rigidbody_align import pt_align
-        bpy.utils.register_class(pt_align.MIC_PT_Align)
-    except ImportError:
-        # If the dependencies are not installed, unregister already registered classes
-        # and register the warning panel.
-        unregister()
-        bpy.utils.register_class(DEPENDENCY_PT_Warning)
-        return
+    from .rigidbody_align import pt_align
+    bpy.utils.register_class(pt_align.MIC_PT_Align)
 
 
 def unregister() -> None:
-    """
-    Unregister the classes,
-    or the warning panel if the dependencies are not installed.
-    """
     # Hand import
     from .hand_import import pt_import_hands
     if pt_import_hands.MIC_PT_MusicalInstrumentCapture.is_registered:
@@ -120,40 +72,13 @@ def unregister() -> None:
     if ot_import_hands.MIC_OT_ImportHands.is_registered:
         bpy.utils.unregister_class(ot_import_hands.MIC_OT_ImportHands)
 
-    from .hand_import import property_groups
-    if property_groups.HandAlignProps.is_registered:
-        bpy.utils.unregister_class(property_groups.HandAlignProps)
+    from .hand_import import property_groups as h_property_groups
+    if h_property_groups.HandAlignProps.is_registered:
+        bpy.utils.unregister_class(h_property_groups.HandAlignProps)
         del bpy.types.Scene.hand_align_props
-    if property_groups.PreprocessProps.is_registered:
-        bpy.utils.unregister_class(property_groups.PreprocessProps)
+    if h_property_groups.PreprocessProps.is_registered:
+        bpy.utils.unregister_class(h_property_groups.PreprocessProps)
         del bpy.types.Scene.preprocess_props
-
-    # OLD
-    from .hand_import import ot_load_data
-    if ot_load_data.MIC_OT_LoadData.is_registered:
-        bpy.utils.unregister_class(ot_load_data.MIC_OT_LoadData)
-
-    from .hand_import import property_groups
-    if property_groups.PreprocessProps.is_registered:
-        bpy.utils.unregister_class(property_groups.PreprocessProps)
-        del bpy.types.Scene.preprocess_props
-
-    from .hand_import import ot_preprocess_data
-    if ot_preprocess_data.MIC_OT_PreprocessData.is_registered:
-        bpy.utils.unregister_class(ot_preprocess_data.MIC_OT_PreprocessData)
-
-    from .hand_import import ot_generate_armature
-    if ot_generate_armature.MIC_OT_GenerateArmature.is_registered:
-        bpy.utils.unregister_class(ot_generate_armature.MIC_OT_GenerateArmature)
-
-    from .hand_import import ot_generate_empty
-    if ot_generate_empty.MIC_OT_GenerateEmpty.is_registered:
-        bpy.utils.unregister_class(ot_generate_empty.MIC_OT_GenerateEmpty)
-
-    from .hand_import import import_hands_data
-    if import_hands_data.HandAlignData.is_registered:
-        bpy.utils.unregister_class(import_hands_data.HandAlignData)
-        del bpy.types.Scene.hand_align_data
 
     # Rigid body align
     from .rigidbody_align import pt_align
@@ -168,14 +93,10 @@ def unregister() -> None:
     if ot_align_violin.MIC_OT_AlignViolin.is_registered:
         bpy.utils.unregister_class(ot_align_violin.MIC_OT_AlignViolin)
 
-    from .rigidbody_align import align_data
-    if align_data.ViolinAlignData.is_registered:
-        bpy.utils.unregister_class(align_data.ViolinAlignData)
+    from .rigidbody_align import property_groups as r_property_groups
+    if r_property_groups.ViolinAlignProps.is_registered:
+        bpy.utils.unregister_class(r_property_groups.ViolinAlignProps)
         del bpy.types.Scene.violin_align_data
-    if align_data.BowAlignData.is_registered:
-        bpy.utils.unregister_class(align_data.BowAlignData)
+    if r_property_groups.BowAlignProps.is_registered:
+        bpy.utils.unregister_class(r_property_groups.BowAlignProps)
         del bpy.types.Scene.bow_align_data
-
-    # Warning panel
-    if DEPENDENCY_PT_Warning.is_registered:
-        bpy.utils.unregister_class(DEPENDENCY_PT_Warning)

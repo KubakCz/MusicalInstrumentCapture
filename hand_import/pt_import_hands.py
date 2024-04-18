@@ -21,16 +21,13 @@ import bpy
 from .property_groups import HandAlignProps, PreprocessProps
 from .ot_import_hands import MIC_OT_ImportHands
 
-from .ot_generate_empty import MIC_OT_GenerateEmpty
-from .ot_generate_armature import MIC_OT_GenerateArmature
-from .ot_preprocess_data import MIC_OT_PreprocessData, PreprocessedData
-from .ot_load_data import MIC_OT_LoadData, RawData
-
 
 class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
-    """Main panel for the Musical Instrument Capture add-on."""
+    """
+    Panel for importing hand animation data and aligning it with the motion capture data.
+    """
     bl_label = "Import Hand Animation"
-    bl_idname = "VIEW3D_PT_MusicalInstrumentCapture"
+    bl_idname = "MIC_PT_MusicalInstrumentCapture"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Musical Instrument Capture"
@@ -58,33 +55,3 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
             layout.prop_search(hand_align_props, "right_hand_target", hand_align_props.target_aramture.pose, "bones")
 
         layout.operator(MIC_OT_ImportHands.bl_idname)
-
-        # OLD CODE:
-        layout.separator()
-
-        hand_align_data = context.scene.hand_align_data
-        layout.label(text="No data loaded." if RawData.raw_data is None else f"Loaded data: {RawData.filename}")
-        layout.operator(MIC_OT_LoadData.bl_idname)
-
-        # if RawData.raw_data is None:
-        #     return
-
-        layout.separator()
-        layout.prop(hand_align_data, "palm_size")
-        layout.prop(hand_align_data, "cutoff_frequency")
-        layout.prop(hand_align_data, "filter_order")
-        layout.prop(hand_align_data, "samples_per_frame")
-        layout.label(text="Preprocessed data: None" if PreprocessedData.hands is None else "Preprocessed data: Ready")
-        layout.operator(MIC_OT_PreprocessData.bl_idname)
-
-        # if PreprocessedData.hands is None:
-        #     return
-
-        layout.separator()
-        layout.prop_search(hand_align_data, "target_aramture", bpy.data, "armatures", icon='ARMATURE_DATA')
-        if hand_align_data.target_aramture is not None:
-            layout.prop_search(hand_align_data, "left_hand_target", hand_align_data.target_aramture.pose, "bones")
-            layout.prop_search(hand_align_data, "right_hand_target", hand_align_data.target_aramture.pose, "bones")
-        layout.prop(hand_align_data, "use_average_joint_distance")
-        layout.operator(MIC_OT_GenerateArmature.bl_idname)
-        layout.operator(MIC_OT_GenerateEmpty.bl_idname)
