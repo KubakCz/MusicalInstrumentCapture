@@ -65,8 +65,10 @@ class MIC_OT_ImportHands(bpy.types.Operator):
 
         # For now, only one left and one right hand is supported
         # => filter out all other hands before preprocessing
-        l_idx = next((i for i, hand in enumerate(hands) if hand.hand_type == HandType.LEFT), None)
-        r_idx = next((i for i, hand in enumerate(hands) if hand.hand_type == HandType.RIGHT), None)
+        l_idx = next((i for i, hand in enumerate(hands) if hand.hand_type ==
+                     HandType.LEFT and not hand.is_empty()), None)
+        r_idx = next((i for i, hand in enumerate(hands) if hand.hand_type ==
+                     HandType.RIGHT and not hand.is_empty()), None)
         left_hand_count = sum(1 for hand in hands if hand.hand_type == HandType.LEFT)
         right_hand_count = len(hands) - left_hand_count
         if left_hand_count > 1:

@@ -151,6 +151,13 @@ class Hand:
         self.hand_type = hand_type
         self.frames = frames
 
+    def is_empty(self) -> bool:
+        """
+        Check if the hand has no animation data.
+        :return: True if the hand has no frames, False otherwise.
+        """
+        return len(self.frames) == 0
+
     @staticmethod
     def from_data(data: Dict[str, Any]) -> 'Hand':
         """
@@ -166,13 +173,13 @@ class Hand:
                 f"Could not convert data to a hand: invalid name type (is {type(data['name'])}, expects str).")
         name = data["name"]
 
-        # Handedness
-        if "handType" not in data:
+        # Hand type
+        if "type" not in data:
             raise InvalidDataError("Could not convert data to a hand: hand type not found.")
-        if not isinstance(data["handType"], str) or data["handType"].upper() not in HandType.__members__:
+        if not isinstance(data["type"], str) or data["type"].upper() not in HandType.__members__:
             raise InvalidDataError(
-                f"Could not convert data to a hand: unrecognized hand type ({data['handType']}).")
-        handedness = HandType[data["handType"].upper()]
+                f"Could not convert data to a hand: unrecognized hand type ({data['type']}).")
+        handedness = HandType[data["type"].upper()]
 
         # Animation data
         if "animationData" not in data:
