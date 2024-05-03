@@ -29,6 +29,7 @@ class MIC_OT_ImportHands(bpy.types.Operator):
     """Operator for Importing hands."""
     bl_idname = "mic.import_hands"
     bl_label = "Import Hands"
+    bl_description = "Import hand animation data and align it with the motion capture data"
     bl_options = {'REGISTER', 'UNDO'}
 
     # Filepath property filled by the file dialog

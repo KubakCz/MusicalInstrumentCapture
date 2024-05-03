@@ -28,6 +28,7 @@ class MIC_OT_AlignBow(bpy.types.Operator):
     """
     bl_idname = "mic.align_bow"
     bl_label = "Align Bow"
+    bl_description = "Align the bow model according to the given rigidbody and markers"
     bl_options = {'REGISTER', 'UNDO'}
 
     def any_none(self, data: BowAlignProps) -> bool:

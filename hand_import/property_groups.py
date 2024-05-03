@@ -26,22 +26,22 @@ class HandAlignProps(bpy.types.PropertyGroup):
     """
     start_frame: bpy.props.IntProperty(  # type: ignore
         name="Start Frame",  # noqa
-        description="Frame at which the hand animation should start.",  # noqa
+        description="Frame at which the hand animation should start",  # noqa
         default=1)
 
     target_aramture: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Target Armature",  # noqa
-        description="Armature to which the hands will be attached.",  # noqa
+        description="Armature to which the hands will be attached",  # noqa
         poll=lambda self, obj: obj.type == 'ARMATURE')
 
     left_hand_target: bpy.props.StringProperty(  # type: ignore
         name="Left Hand Target Bone",  # noqa
-        description="Bone to which the left hand will be aligned.")  # noqa
+        description="Bone to which the left hand will be aligned")  # noqa
 
     right_hand_target: bpy.props.StringProperty(  # type: ignore
         name="Right Hand Target Bone",  # noqa
-        description="Bone to which the right hand will be aligned.")  # noqa
+        description="Bone to which the right hand will be aligned")  # noqa
 
     def prop_not_set(self) -> str | None:
         """
@@ -63,25 +63,27 @@ class PreprocessProps(bpy.types.PropertyGroup):
     """
     palm_size: bpy.props.FloatProperty(  # type: ignore
         name="Palm Size",  # noqa
-        description="Size of the palm.",  # noqa
+        description="Size of the palm",  # noqa
         default=0.1,
         min=0,
         unit='LENGTH')  # noqa
 
     cutoff_frequency: bpy.props.FloatProperty(  # type: ignore
         name="Frequency Cutoff (Hz)",  # noqa
-        description="Lower values give a smoother curve.",  # noqa
+        description="Lower values give a smoother curve",  # noqa
         default=6,
         min=0)
 
     filter_order: bpy.props.IntProperty(  # type: ignore
         name="Filter Order",  # noqa
-        description="Higher values produce a harder frequency cutoff.",  # noqa
+        description="Higher values produce a harder frequency cutoff",  # noqa
         default=6,
-        min=1)
+        min=1,
+        max=32)
 
     samples_per_frame: bpy.props.IntProperty(  # type: ignore
         name="Samples per Frame",  # noqa
-        description="How many samples to calculate per frame, helps with subframe data.",  # noqa
+        description="How many samples to calculate per frame, helps with subframe data",  # noqa
         default=2,
-        min=1)
+        min=1,
+        max=64)

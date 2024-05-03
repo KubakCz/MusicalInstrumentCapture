@@ -19,7 +19,7 @@
 import bpy
 
 plane_marker_name = "Plane marker"
-plane_marker_description = "Marker defining plane orientation of the top plate of the violin."
+plane_marker_description = "Marker defining plane orientation of the top plate of the violin"
 
 
 class ViolinAlignProps(bpy.types.PropertyGroup):
@@ -27,16 +27,16 @@ class ViolinAlignProps(bpy.types.PropertyGroup):
     reference_point: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Reference Point",  # noqa
-        description="Reference object placed on the violin model. Must be child of the model.")  # noqa
+        description="Reference object placed on the violin model. Must be child of the model")  # noqa
     reference_marker: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Reference Marker",  # noqa
-        description="Marker to be aligned with reference point.")  # noqa
+        description="Marker to be aligned with reference point")  # noqa
 
     rigidbody: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Rigidbody",  # noqa
-        description="Rigidbody object representing the violin.")  # noqa
+        description="Rigidbody object representing the violin")  # noqa
 
     plane_1: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
@@ -54,11 +54,11 @@ class ViolinAlignProps(bpy.types.PropertyGroup):
     bridge: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Bridge marker",  # noqa
-        description="Marker above the center of the bridge.")  # noqa
+        description="Marker above the center of the bridge")  # noqa
     scroll: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Scroll marker",  # noqa
-        description="Marker above the scroll.")  # noqa
+        description="Marker above the scroll")  # noqa
 
 
 class BowAlignProps(bpy.types.PropertyGroup):
@@ -66,22 +66,22 @@ class BowAlignProps(bpy.types.PropertyGroup):
     reference_point: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
        name="Reference Point",  # noqa
-        description="Reference object placed on the bow model. Must be child of the model.")  # noqa
+        description="Reference object placed on the bow model. Must be child of the model")  # noqa
     reference_marker: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Reference Marker",  # noqa
-        description="Marker to be aligned with reference point.")  # noqa
+        description="Marker to be aligned with reference point")  # noqa
 
     rigidbody: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Rigidbody",  # noqa
-        description="Rigidbody object representing the bow.")  # noqa
+        description="Rigidbody object representing the bow")  # noqa
 
     stick: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Stick marker",  # noqa
-        description="Marker at stick.")  # noqa
+        description="Marker at stick")  # noqa
     tip: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Tip marker",  # noqa
-        description="Marker at the tip of the bow.")  # noqa
+        description="Marker at the tip of the bow")  # noqa

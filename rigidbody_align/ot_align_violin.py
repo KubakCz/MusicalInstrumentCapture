@@ -9,6 +9,7 @@ class MIC_OT_AlignViolin(bpy.types.Operator):
     """
     bl_idname = "mic.align_violin"
     bl_label = "Align Violin"
+    bl_description = "Align the violin model according to the given rigidbody and markers"
     bl_options = {'REGISTER', 'UNDO'}
 
     def any_none(self, data: ViolinAlignProps) -> bool:
