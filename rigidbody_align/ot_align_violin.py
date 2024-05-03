@@ -53,6 +53,7 @@ class MIC_OT_AlignViolin(bpy.types.Operator):
             return {'CANCELLED'}
 
         model = violin_align_data.reference_point.parent
+        assert isinstance(model, bpy.types.Object)
 
         # setup child_of constraint
         for constraint in model.constraints:
@@ -88,7 +89,10 @@ class MIC_OT_AlignViolin(bpy.types.Operator):
 
         # set the rotation of the violin model
         rot_matrix = Matrix((width_direction, neck_direction, plane_normal)).transposed()
-        model.rotation_euler = rot_matrix.to_euler()
+        original_rot_mode = model.rotation_mode
+        model.rotation_mode = 'QUATERNION'
+        model.rotation_quaternion = rot_matrix.to_quaternion()
+        model.rotation_mode = original_rot_mode
 
         # force Blender to update 'matrix_world' of the violin model
         bpy.context.view_layer.update()
