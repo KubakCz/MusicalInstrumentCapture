@@ -84,18 +84,26 @@ class MIC_OT_AlignBow(bpy.types.Operator):
         child_of_constraint.set_inverse_pending = True
 
         # get world space positions of the markers
+        m_frog_bottom_ws = bow_align_props.frog_bottom.matrix_world.decompose()[0]
+        m_frog_top_ws = bow_align_props.frog_top.matrix_world.decompose()[0]
         m_stick_ws = bow_align_props.stick.matrix_world.decompose()[0]
         m_tip_ws = bow_align_props.tip.matrix_world.decompose()[0]
         m_reference_marker_ws = bow_align_props.reference_marker.matrix_world.decompose()[0]
 
-        # compute rotation matrix of the bow model
-        rb_rotation_mat = bow_align_props.rigidbody.matrix_world.decompose()[1].to_matrix()
-        bow_z = rb_rotation_mat.col[1]                          # vertical axis is the same as of the rigidbody
-        stick_direction = (m_tip_ws - m_stick_ws).normalized()  # dir of the bow - markers can be in different heights
-        bow_x = stick_direction.cross(bow_z)
-        bow_y = bow_z.cross(bow_x)
+        # calculate normal of the vertical plane
+        plane_vec_1 = m_frog_bottom_ws - m_frog_top_ws
+        plane_vec_2 = m_tip_ws - m_frog_top_ws
+        x_axis = plane_vec_1.cross(plane_vec_2).normalized()
 
-        bow_rotation_mat = Matrix((bow_x, bow_y, bow_z)).transposed()
+        # z-axis is the direction of the bow
+        bow_direction = m_stick_ws - m_frog_top_ws
+        z_axis = x_axis.cross(bow_direction).normalized()
+
+        # y-axis is perpendicular to the x and z axes
+        y_axis = z_axis.cross(x_axis)
+
+        # set the rotation of the violin model
+        bow_rotation_mat = Matrix((x_axis, y_axis, z_axis)).transposed()
         original_rot_mode = model.rotation_mode
         model.rotation_mode = 'QUATERNION'
         model.rotation_quaternion = bow_rotation_mat.to_quaternion()

@@ -77,6 +77,14 @@ class BowAlignProps(bpy.types.PropertyGroup):
         name="Rigidbody",  # noqa
         description="Rigidbody object representing the bow")  # noqa
 
+    frog_bottom: bpy.props.PointerProperty(  # type: ignore
+        type=bpy.types.Object,
+        name="Frog bottom marker",  # noqa
+        description="Marker at the bottom of the frog")  # noqa
+    frog_top: bpy.props.PointerProperty(  # type: ignore
+        type=bpy.types.Object,
+        name="Frog top marker",  # noqa
+        description="Marker abowe the frog")  # noqa
     stick: bpy.props.PointerProperty(  # type: ignore
         type=bpy.types.Object,
         name="Stick marker",  # noqa

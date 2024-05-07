@@ -60,6 +60,8 @@ class MIC_PT_Align(bpy.types.Panel):
         bow_markers_box = layout.box()
         bow_markers_box.prop_search(bow_align_data, "rigidbody", bpy.data, "objects")
         bow_markers_box.label(text="Markers:")
+        bow_markers_box.prop_search(bow_align_data, "frog_bottom", bpy.data, "objects")
+        bow_markers_box.prop_search(bow_align_data, "frog_top", bpy.data, "objects")
         bow_markers_box.prop_search(bow_align_data, "stick", bpy.data, "objects")
         bow_markers_box.prop_search(bow_align_data, "tip", bpy.data, "objects")
         bow_markers_box.prop_search(bow_align_data, "reference_marker", bpy.data, "objects")
