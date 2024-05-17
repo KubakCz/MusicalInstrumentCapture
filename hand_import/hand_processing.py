@@ -30,8 +30,7 @@ def _get_inverse_hand_rotation(
         wrist_loc: Vector,
         index_loc: Vector,
         middle_loc: Vector,
-        ring_loc: Vector,
-        hand_type: HandType) -> Matrix:
+        ring_loc: Vector) -> Matrix:
     """
     Calculate the invers rotation matrix for the hand based on the given world positions.
     :param world_positions: List of world positions of the hand joints.
@@ -45,14 +44,11 @@ def _get_inverse_hand_rotation(
     # y-axis is the direction from the wrist to the middle finger
     y_axis = to_middle.normalized()
 
-    if hand_type == HandType.LEFT:
-        palm_dir = to_index.cross(to_ring).normalized()
-    else:
-        palm_dir = to_ring.cross(to_index).normalized()
+    palm_dir = to_ring.cross(to_index).normalized()
 
     # z-axis is the direction perpendicular to the palm direction and y-axis
-    z_axis = y_axis.cross(palm_dir).normalized()
-    # x-axis is -palm direction adjusted to be perpendicular to z and y axes
+    z_axis = palm_dir.cross(y_axis).normalized()
+    # x-axis is palm direction adjusted to be perpendicular to z and y axes
     x_axis = y_axis.cross(z_axis).normalized()
 
     return Matrix((x_axis, y_axis, z_axis))
@@ -63,7 +59,8 @@ def _process_1_joint_frame(
         wrist_loc: Vector,
         wrist_irot: Matrix,
         succ_loc: Vector,
-        join_dist: float) -> Tuple[Vector, Quaternion, Matrix]:
+        join_dist: float,
+        hand_type: HandType) -> Tuple[Vector, Quaternion, Matrix]:
     """
     Computes locala location, local rotation, and global inverse rotation matrix
     of the first finger joint (parented to wrist).
@@ -81,9 +78,11 @@ def _process_1_joint_frame(
 
     # Glob rotation
     to_succ = succ_loc - joint_loc
-    up_dir_ws = wrist_irot[0]
+    palm_dir_ws = wrist_irot[0]                            # wrist x-axis in world space
+    if hand_type == HandType.LEFT:
+        palm_dir_ws = -palm_dir_ws
     y_axis_ws = to_succ.normalized()                       # joint -> successor
-    x_axis_ws = y_axis_ws.cross(up_dir_ws).normalized()    # perpendicular to y-axis and up direction
+    x_axis_ws = y_axis_ws.cross(palm_dir_ws).normalized()  # perpendicular to y-axis and palm direction
     z_axis_ws = x_axis_ws.cross(y_axis_ws).normalized()
     ws_irot = Matrix((x_axis_ws, y_axis_ws, z_axis_ws))    # rot from local to world space
 
@@ -180,8 +179,7 @@ def _process_frame(
         world_positions[HandJoint.WRIST.value],
         world_positions[HandJoint.INDEX_1.value],
         world_positions[HandJoint.MIDDLE_1.value],
-        world_positions[HandJoint.RING_1.value],
-        hand_type
+        world_positions[HandJoint.RING_1.value]
     )
 
     # Process 1st finger joints
@@ -193,7 +191,8 @@ def _process_frame(
             world_positions[HandJoint.WRIST.value],
             ws_irots[HandJoint.WRIST.value],
             world_positions[successor.value],
-            average_joint_distances[joint.value]
+            average_joint_distances[joint.value],
+            hand_type
         )
         ws_irots[joint.value] = irot
         results[joint.value] = loc, rot
