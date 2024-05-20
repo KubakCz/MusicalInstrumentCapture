@@ -30,7 +30,7 @@ class MIC_PT_MusicalInstrumentCapture(bpy.types.Panel):
     bl_idname = "MIC_PT_MusicalInstrumentCapture"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Musical Instrument Capture"
+    bl_category = "Musical Instrument Animation"
 
     def draw(self, context: bpy.types.Context) -> None:
         layout = self.layout

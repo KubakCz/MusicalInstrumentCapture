@@ -14,17 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Entry point for the Musical Instrument Capture add-on."""
+"""Entry point for the Musical Instrument Animation add-on."""
 
 import bpy
 
 bl_info = {
-    "name": "Musical Instrument Capture",
+    "name": "Musical Instrument Animation",
     "author": "Jakub Slezáček",
     "description": "A tool to make animating violin performances easier.",
     "blender": (4, 0, 0),
     "version": (0, 1, 0),
-    "location": "View3D > Sidebar > Musical Instrument Capture",
+    "location": "View3D > Sidebar > Musical Instrument Animation",
     "warning": "",
     "doc_url": "https://github.com/KubakCz/MusicalInstrumentCapture/blob/main/README.md",
     "category": "Animation"
