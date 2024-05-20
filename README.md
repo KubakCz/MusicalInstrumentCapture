@@ -28,8 +28,10 @@ This tab serves for aligning 3D models with markers imported from Motive.
 
 To align a model:
 1) import model,
-2) set axis of model to be the same as in Figure x,
+2) set axis of model to be the same as in image bellow,
 3) select imported rigidbody and markers (top plate markers for violin must be in clockwise order),
 4) add a empty as a child to the model and position it to match some marker on the real object,
 5) set that empty and corresponding reference marker in the *Align* tab,
 6) click *Align* button.
+
+![](model_orientation.jpg "Correct model orientation")
