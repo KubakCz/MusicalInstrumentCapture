@@ -17,7 +17,7 @@
 """Functions for generating and aligning armatures from preprocessed hand data."""
 
 import bpy
-from typing import List
+from typing import List, Tuple
 from mathutils import Vector
 
 from .hand_processing import process_hand
@@ -88,7 +88,7 @@ def _generate_bones(
 def _create_animation_data(
         hand: PreprocessedHand,
         armature_object: bpy.types.Object,
-        bones: List[bpy.types.PoseBone]) -> List[JointFCurves | None]:
+        bones: List[bpy.types.PoseBone]) -> Tuple[bpy.types.Action, List[JointFCurves | None]]:
     """
     Create animation data for the given hand and bones.
     :param hand: Preprocessed hand data.
@@ -98,14 +98,10 @@ def _create_animation_data(
         raise ValueError(
             f"Wrong number of bones in the list (has {len(bones)}, expected {len(HandJoint)}).")
 
-    # Create or get animation action
+    # Create animation action
     if armature_object.animation_data is None:
         armature_object.animation_data_create()
-    if armature_object.animation_data.action is None:
-        action = bpy.data.actions.new(name=hand.name)
-        armature_object.animation_data.action = action
-    else:
-        action = armature_object.animation_data.action
+    action = bpy.data.actions.new(name=hand.name)
 
     # Create fcurves for each bone
     fcurves: List[JointFCurves | None] = [None]  # None for wrist (uses animation from the armature)
@@ -116,7 +112,20 @@ def _create_animation_data(
             JointFCurves(action, f'pose.bones["{bone.name}"]', bone.name)
         )
 
-    return fcurves
+    return action, fcurves
+
+
+def _setup_nla_track(
+        armature_object: bpy.types.Object,
+        action: bpy.types.Action,
+        track_name: str,
+        start_frame: int) -> None:
+    # Create a new NLA track
+    nla_track = armature_object.animation_data.nla_tracks.new()
+    nla_track.name = track_name
+
+    # Add the action as a strip to the new NLA track
+    nla_track.strips.new(name=action.name, start=start_frame, action=action)
 
 
 def add_hand_to_armature(
@@ -134,7 +143,7 @@ def add_hand_to_armature(
     :param start_frame: Frame at which the animation should start.
     """
     bones = _generate_bones(hand, armature_object, target_bone)
-    joint_fcurves = _create_animation_data(hand, armature_object, bones)
+    action, joint_fcurves = _create_animation_data(hand, armature_object, bones)
     joint_animation_data = process_hand(hand)
     timestamps = [frame.timestamp * scene_fps + start_frame for frame in hand.frames]
     for joint_fcurve, joint_data in zip(joint_fcurves, joint_animation_data):
@@ -144,3 +153,4 @@ def add_hand_to_armature(
                 joint_data[0],
                 joint_data[1]
             )
+    _setup_nla_track(armature_object, action, hand.name, int(start_frame))
